@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fabric Shop — Cennik</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
+
+  body {
+    background: #0a0000;
+    background-image:
+      radial-gradient(circle at 20% 10%, rgba(255,0,0,0.15), transparent 40%),
+      radial-gradient(circle at 80% 90%, rgba(255,0,0,0.12), transparent 40%);
+    color: #eee;
+    min-height: 100vh;
+    padding: 40px 20px 80px;
+  }
+
+  /* ===== NAGŁÓWEK ===== */
+  header { text-align: center; margin-bottom: 40px; }
+
+  header h1 {
+    font-size: 3rem;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: #ff2b2b;
+    text-shadow: 0 0 10px #ff0000, 0 0 30px #990000;
+  }
+
+  header p {
+    margin-top: 10px;
+    color: #ff8080;
+    letter-spacing: 2px;
+    font-size: .95rem;
+  }
+
+  /* ===== PRZYCISKI KATEGORII ===== */
+  .categories {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 14px;
+    max-width: 1000px;
+    margin: 0 auto 50px;
+  }
+
+  .cat-btn {
+    padding: 12px 24px;
+    background: transparent;
+    color: #ff4d4d;
+    border: 2px solid #ff2b2b;
+    border-radius: 8px;
+    font-size: .95rem;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    cursor: pointer;
+    transition: all .25s ease;
+    font-weight: 600;
+  }
+
+  .cat-btn:hover {
+    background: #ff2b2b;
+    color: #0a0000;
+    box-shadow: 0 0 20px #ff0000;
+    transform: translateY(-2px);
+  }
+
+  .cat-btn.active {
+    background: #ff2b2b;
+    color: #0a0000;
+    box-shadow: 0 0 25px #ff0000;
+  }
+
+  /* ===== SEKCJE ===== */
+  .section {
+    max-width: 1000px;
+    margin: 0 auto 60px;
+    animation: fadeIn .4s ease;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(15px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .section h2 {
+    font-size: 1.8rem;
+    color: #ff2b2b;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    margin-bottom: 25px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid #ff2b2b;
+    text-shadow: 0 0 10px #ff0000;
+  }
+
+  /* ===== KARTY OFERT ===== */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 18px;
+  }
+
+  .card {
+    background: linear-gradient(145deg, #150000, #1f0000);
+    border: 1px solid #5c0000;
+    border-radius: 12px;
+    padding: 20px;
+    transition: all .25s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 3px;
+    background: linear-gradient(90deg, transparent, #ff2b2b, transparent);
+  }
+
+  .card:hover {
+    transform: translateY(-5px);
+    border-color: #ff2b2b;
+    box-shadow: 0 0 25px rgba(255,0,0,0.5);
+  }
+
+  .card .name {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #ffb3b3;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .card .note {
+    font-size: .8rem;
+    color: #aa6666;
+    margin-bottom: 12px;
+    font-style: italic;
+  }
+
+  .card .price {
+    font-size: 1.9rem;
+    font-weight: 900;
+    color: #ff2b2b;
+    text-shadow: 0 0 12px #ff0000;
+  }
+
+  .card .price span {
+    font-size: .95rem;
+    color: #ff8080;
+    font-weight: 500;
+    margin-left: 3px;
+  }
+
+  /* ===== KARTA Z LISTĄ (np. konta FN) ===== */
+  .list-card {
+    background: linear-gradient(145deg, #150000, #1f0000);
+    border: 1px solid #5c0000;
+    border-radius: 12px;
+    padding: 22px;
+    margin-bottom: 18px;
+  }
+
+  .list-card .name {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: #ffb3b3;
+    margin-bottom: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+
+  .list-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 9px 4px;
+    border-bottom: 1px dashed #4d0000;
+    font-size: .95rem;
+    transition: background .2s;
+  }
+
+  .list-row:last-child { border-bottom: none; }
+  .list-row:hover { background: rgba(255,0,0,0.08); }
+  .list-row .label { color: #ffb3b3; }
+  .list-row .val { color: #ff2b2b; font-weight: 700; }
+
+  /* ===== PRZYCISK DO DISCORDA ===== */
+  .dc-btn {
+    display: inline-block;
+    margin-top: 18px;
+    padding: 12px 28px;
+    background: #ff2b2b;
+    color: #0a0000;
+    font-weight: 800;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    text-decoration: none;
+    border-radius: 8px;
+    transition: all .25s;
+    box-shadow: 0 0 15px rgba(255,0,0,0.5);
+  }
+
+  .dc-btn:hover {
+    background: #ff5555;
+    box-shadow: 0 0 30px #ff0000;
+    transform: scale(1.04);
+  }
+
+  /* ===== STOPKA ===== */
+  footer {
+    text-align: center;
+    margin-top: 60px;
+    padding-top: 25px;
+    border-top: 1px solid #4d0000;
+    color: #883333;
+    font-size: .85rem;
+    letter-spacing: 2px;
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Fabric Shop</h1>
+  <p>// CENNIK //</p>
+</header>
+
+
+<!-- PRZYCISKI KATEGORII -->
+<nav class="categories">
+  <button class="cat-btn" data-target="streaming">🎬 Streaming</button>
+  <button class="cat-btn" data-target="gry">🎮 Gry</button>
+  <button class="cat-btn" data-target="social">📈 Social Boost</button>
+  <button class="cat-btn" data-target="fake">👥 Fake Slot</button>
+  <button class="cat-btn" data-target="inne">🛠 Inne usługi</button>
+  <button class="cat-btn" data-target="metody">🧪 Metody</button>
+</nav>
+
+<!-- ============ STREAMING ============ -->
+<section class="section" id="streaming">
+  <h2>🎬 Streaming</h2>
+  <div class="grid">
+
+    <div class="card">
+      <div class="name">Netflix</div>
+      <div class="note">ok. 3 lata</div>
+      <div class="price">24 <span>zł</span></div>
+    </div>
+
+    <div class="card">
+      <div class="name">Netflix</div>
+      <div class="note">1 rok</div>
+      <div class="price">17 <span>zł</span></div>
+    </div>
+
+    <div class="card">
+      <div class="name">Netflix</div>
+      <div class="note">3 miesiące</div>
+      <div class="price">14 <span>zł</span></div>
+    </div>
+
+    <div class="card">
+      <div class="name">Netflix</div>
+      <div class="note">1 miesiąc</div>
+      <div class="price">10 <span>zł</span></div>
+    </div>
+
+    <div class="card">
+      <div class="name">Disney+</div>
+      <div class="note">ok. 3 lata</div>
+      <div class="price">24 <span>zł</span></div>
+    </div>
+
+    <div class="card">
+      <div class="name">Disney+</div>
+      <div class="note">6 miesięcy</div>
+      <div class="price">16 <span>zł</span></div>
+    </div>
+
+    <div class="card">
+      <div class="name">Disney+</div>
+      <div class="note">3 miesiące</div>
+      <div class="price">12 <span>zł</span></div>
+    </div>
+
+    <div class="card">
+      <div class="name">YouTube Premium</div>
+      <div class="note">Klucz — na Twoje konto • 1 miesiąc</div>
+      <div class="price">17 <span>zł</span></div>
+    </div>
+
+    <div class="card">
+      <div class="name">YouTube Premium</div>
+      <div class="note">1 rok • nowe konto</div>
+      <div class="price">34 <span>zł</span></div>
+    </div>
+
+    <div class="card">
+      <div class="name">YouTube Premium</div>
+      <div class="note">1 miesiąc • nowe konto</div>
+      <div class="price">14 <span>zł</span></div>
+    </div>
+
+    <div class="card">
+      <div class="name">Gemini Pro AI + Google 5TB</div>
+      <div class="note">Storage w zestawie</div>
+      <div class="price">26 <span>zł</span></div>
+    </div>
+
+    <div class="card">
+      <div class="name">CapCut Pro</div>
+      <div class="note">1 miesiąc</div>
+      <div class="price">12 <span>zł</span></div>
+    </div>
+
+    <div class="card">
+      <div class="name">CapCut Pro</div>
+      <div class="note">na zawsze</div>
+      <div class="price">30 <span>zł</span></div>
+    </div>
+
+    <div class="card">
+      <div class="name">ChatGPT Plus</div>
+      <div class="note">1 miesiąc</div>
+      <div class="price">28 <span>zł</span></div>
+    </div>
+
+    <div class="card">
+      <div class="name">ChatGPT Plus</div>
+      <div class="note">6 miesięcy</div>
+      <div class="price">45 <span>zł</span></div>
+    </div>
+
+    <div class="card">
+      <div class="name">ChatGPT Plus</div>
+      <div class="note">1 rok</div>
+      <div class="price">55 <span>zł</span></div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============ GRY ============ -->
+<section class="section" id="gry">
+  <h2>🎮 Gry</h2>
+  <div class="grid">
+
+    <div class="card">
+      <div class="name">Konto Minecraft</div>
+      <div class="price">45 <span>zł</span></div>
+    </div>
+
+    <div class="card">
+      <div class="name">Konto GTA V</div>
+      <div class="price">35 <span>zł</span></div>
+    </div>
+
+    <div class="card">
+      <div class="name">Każda gra Steam</div>
+      <div class="note">Płacisz 60% ceny gry na Steamie</div>
+      <div class="price">60 <span>% ceny</span></div>
+    </div>
+
+    <div class="card">
+      <div class="name">Robuxy</div>
+      <div class="note">1000 robuxów</div>
+      <div class="price">45 <span>zł</span></div>
+    </div>
+
+  </div>
+
+  <br>
+
+  <div class="list-card">
+    <div class="name">Konta Fortnite z V-Dolcami</div>
+    <div class="list-row"><span class="label">30 000 V-Bucks</span><span class="val">250 PLN</span></div>
+    <div class="list-row"><span class="label">20 000 V-Bucks</span><span class="val">200 PLN</span></div>
+    <div class="list-row"><span class="label">13 000 V-Bucks</span><span class="val">130 PLN</span></div>
+    <div class="list-row"><span class="label">8 000 V-Bucks</span><span class="val">90 PLN</span></div>
+    <div class="list-row"><span class="label">6 000 V-Bucks</span><span class="val">70 PLN</span></div>
+    <div class="list-row"><span class="label">4 000 V-Bucks</span><span class="val">45 PLN</span></div>
+    <div class="list-row"><span class="label">2 500 V-Bucks</span><span class="val">30 PLN</span></div>
+  </div>
+</section>
+
+<!-- ============ SOCIAL BOOST ============ -->
+<section class="section" id="social">
+  <h2>📈 Social Boost</h2>
+  <div class="list-card">
+    <div class="name">Ceny przydzielane na ticket</div>
+    <p style="color:#ffb3b3; line-height:1.6;">
+      Wszystkie ceny Social Boost ustalane są indywidualnie poprzez ticket na naszym Discordzie.
+      Napisz do nas, aby otrzymać wycenę.
+    </p>
+    <a class="dc-btn" href="https://discord.gg/Dszy6aMqvP" target="_blank" rel="noopener">Dołącz na Discord</a>
+  </div>
+</section>
+
+<!-- ============ FAKE SLOT ============ -->
+<section class="section" id="fake">
+  <h2>👥 Fake Slot</h2>
+  <div class="list-card">
+    <div class="name">Ceny przydzielane na ticket</div>
+    <p style="color:#ffb3b3; line-height:1.6;">
+      Ceny za Fake Slot ustalane są indywidualnie poprzez ticket na naszym Discordzie.
+    </p>
+    <a class="dc-btn" href="https://discord.gg/Dszy6aMqvP" target="_blank" rel="noopener">Dołącz na Discord</a>
+  </div>
+</section>
+
+<!-- ============ INNE USŁUGI ============ -->
+<section class="section" id="inne">
+  <h2>🛠 Inne usługi</h2>
+  <div class="grid">
+
+    <div class="card">
+      <div class="name">Bot Discord</div>
+      <div class="note">Wycena na ticket</div>
+    </div>
+
+    <div class="card">
+      <div class="name">Strona WWW</div>
+      <div class="note">Wycena na ticket</div>
+    </div>
+
+    <div class="card">
+      <div class="name">Serwer Minecraft</div>
+      <div class="note">Wycena na ticket</div>
+    </div>
+
+  </div>
+  <br>
+  <a class="dc-btn" href="https://discord.gg/Dszy6aMqvP" target="_blank" rel="noopener">Wycena na Discordzie</a>
+</section>
+
+<!-- ============ METODY ============ -->
+<section class="section" id="metody">
+  <h2>🧪 Moje Metody</h2>
+  <div class="list-card">
+
+    <div class="list-row"><span class="label">Panel do Social Boost</span><span class="val">19 PLN</span></div>
+    <div class="list-row"><span class="label">Darmowe jedzenie Glovo / Pyszne</span><span class="val">12 PLN</span></div>
+    <div class="list-row"><span class="label">Duża ilość Snapscore</span><span class="val">9 PLN</span></div>
+    <div class="list-row"><span class="label">Krypto bez 18 lat</span><span class="val">11 PLN</span></div>
+    <div class="list-row"><span class="label">Darmowe ubrania / buty, łatwy zarobek na Vinted</span><span class="val">11 PLN</span></div>
+    <div class="list-row"><span class="label">Metoda na zmianę maila w FN mimo blokady czasowej</span><span class="val">11 PLN</span></div>
+    <div class="list-row"><span class="label">Nike Refund</span><span class="val">10 PLN</span></div>
+    <div class="list-row"><span class="label">Temu Refund</span><span class="val">11 PLN</span></div>
+    <div class="list-row"><span class="label">SMS Hiting</span><span class="val">10 PLN</span></div>
+    <div class="list-row"><span class="label">FPS Boost, przyspieszenie komputera</span><span class="val">11 PLN</span></div>
+    <div class="list-row"><span class="label">Pozyskiwanie ludzi na serwer Discord</span><span class="val">13 PLN</span></div>
+    <div class="list-row"><span class="label">Klonowanie serwerów Discord</span><span class="val">9 PLN</span></div>
+    <div class="list-row"><span class="label">Darmowe gry (popularne) z Amazona</span><span class="val">9 PLN</span></div>
+    <div class="list-row"><span class="label">Amazon Refund + łatwy zarobek Amazon</span><span class="val">9 PLN</span></div>
+    <div class="list-row"><span class="label">Adidas Refund + łatwy zarobek Adidas</span><span class="val">9 PLN</span></div>
+    <div class="list-row"><span class="label">Ban komuś Instagrama</span><span class="val">9 PLN</span></div>
+    <div class="list-row"><span class="label">Własny darmowy bot Discord</span><span class="val">9 PLN</span></div>
+    <div class="list-row"><span class="label">Metoda na wypłatę kasy z MyPSC na BLIK / bank (0% fee)</span><span class="val">10 PLN</span></div>
+    <div class="list-row"><span class="label">Metoda na wymianę z BLIK-a na krypto (0% fee)</span><span class="val">10 PLN</span></div>
+    <div class="list-row"><span class="label">Metoda na wymianę z PayPala na krypto (2% fee)</span><span class="val">10 PLN</span></div>
+    <div class="list-row"><span class="label">Metoda na wymianę ze Skrilla na krypto (3% fee, bez KYC)</span><span class="val">10 PLN</span></div>
+    <div class="list-row"><span class="label">Pliki, które automatycznie bumpują serwer Discord</span><span class="val">12 PLN</span></div>
+    <div class="list-row"><span class="label">Strona do tanich weryfikacji SMS</span><span class="val">13 PLN</span></div>
+    <div class="list-row"><span class="label">Metoda na tanie V-Dolce</span><span class="val">24 PLN</span></div>
+    <div class="list-row"><span class="label">Metoda na tanią ekypakę</span><span class="val">24 PLN</span></div>
+
+  </div>
+</section>
+
+<footer>
+  FABRIC SHOP © 
+</footer>
+
+<script>
+  // Płynne przewijanie do wybranej kategorii
+  const buttons = document.querySelectorAll('.cat-btn');
+
+  buttons.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const targetId = btn.getAttribute('data-target');
+      const target = document.getElementById(targetId);
+      if (target) {
+        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+        buttons.forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+      }
+    });
+  });
+</script>
+
+</body>
+</html>
