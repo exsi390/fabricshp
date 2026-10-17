@@ -4,493 +4,1116 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Fabric Shop — Cennik</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-  * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #06060a;
+    --bg-soft: #0b0b10;
+    --surface: #0e0e15;
+    --surface-2: #14141c;
+    --surface-3: #1a1a24;
+    --border: rgba(255,255,255,0.07);
+    --border-strong: rgba(255,255,255,0.14);
+    --text: #f2f2f7;
+    --text-soft: #c9c9d4;
+    --muted: #7a7a8c;
+    --dim: #52525f;
+    --accent: #ff2e2e;
+    --accent-bright: #ff5252;
+    --accent-glow: rgba(255,46,46,0.45);
+    --accent-soft: rgba(255,46,46,0.1);
+    --green: #2ee87a;
+    --radius: 16px;
+    --radius-sm: 10px;
+    --font-display: 'Space Grotesk', system-ui, sans-serif;
+    --font-body: 'Inter', system-ui, sans-serif;
+  }
+
+  html { scroll-behavior: smooth; scroll-padding-top: 90px; }
 
   body {
-    background: #0a0000;
-    background-image:
-      radial-gradient(circle at 20% 10%, rgba(255,0,0,0.15), transparent 40%),
-      radial-gradient(circle at 80% 90%, rgba(255,0,0,0.12), transparent 40%);
-    color: #eee;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.55;
     min-height: 100vh;
-    padding: 40px 20px 80px;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+    position: relative;
   }
 
-  /* ===== NAGŁÓWEK ===== */
-  header { text-align: center; margin-bottom: 40px; }
-
-  header h1 {
-    font-size: 3rem;
-    letter-spacing: 4px;
-    text-transform: uppercase;
-    color: #ff2b2b;
-    text-shadow: 0 0 10px #ff0000, 0 0 30px #990000;
+  /* Grain overlay */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    opacity: .04;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
 
-  header p {
-    margin-top: 10px;
-    color: #ff8080;
-    letter-spacing: 2px;
-    font-size: .95rem;
+  /* Animated background orbs */
+  .bg-orb {
+    position: fixed;
+    border-radius: 50%;
+    filter: blur(120px);
+    pointer-events: none;
+    z-index: 0;
+    opacity: .55;
+  }
+  .bg-orb-1 {
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(255,46,46,0.18), transparent 70%);
+    top: -200px; left: -150px;
+    animation: float1 22s ease-in-out infinite;
+  }
+  .bg-orb-2 {
+    width: 700px; height: 700px;
+    background: radial-gradient(circle, rgba(120,60,255,0.1), transparent 70%);
+    bottom: -300px; right: -200px;
+    animation: float2 28s ease-in-out infinite;
+  }
+  @keyframes float1 {
+    0%, 100% { transform: translate(0,0) scale(1); }
+    50% { transform: translate(80px, 60px) scale(1.15); }
+  }
+  @keyframes float2 {
+    0%, 100% { transform: translate(0,0) scale(1); }
+    50% { transform: translate(-60px, -80px) scale(1.1); }
   }
 
-  /* ===== PRZYCISKI KATEGORII ===== */
-  .categories {
+  /* Custom scrollbar */
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb {
+    background: #2a2a36;
+    border-radius: 10px;
+    border: 2px solid var(--bg);
+  }
+  ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
+
+  /* ===== SCROLL PROGRESS ===== */
+  .scroll-progress {
+    position: fixed;
+    top: 0; left: 0;
+    height: 2px;
+    width: 0%;
+    background: linear-gradient(90deg, var(--accent), #ff8a8a);
+    box-shadow: 0 0 12px var(--accent);
+    z-index: 100;
+    transition: width .1s ease;
+  }
+
+  /* ===== STICKY HEADER ===== */
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    background: rgba(6,6,10,0.75);
+    backdrop-filter: blur(18px) saturate(140%);
+    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .topbar-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 14px 24px;
     display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 14px;
-    max-width: 1000px;
-    margin: 0 auto 50px;
-  }
-
-  .cat-btn {
-    padding: 12px 24px;
-    background: transparent;
-    color: #ff4d4d;
-    border: 2px solid #ff2b2b;
-    border-radius: 8px;
-    font-size: .95rem;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
-    cursor: pointer;
-    transition: all .25s ease;
-    font-weight: 600;
-  }
-
-  .cat-btn:hover {
-    background: #ff2b2b;
-    color: #0a0000;
-    box-shadow: 0 0 20px #ff0000;
-    transform: translateY(-2px);
-  }
-
-  .cat-btn.active {
-    background: #ff2b2b;
-    color: #0a0000;
-    box-shadow: 0 0 25px #ff0000;
-  }
-
-  /* ===== SEKCJE ===== */
-  .section {
-    max-width: 1000px;
-    margin: 0 auto 60px;
-    animation: fadeIn .4s ease;
-  }
-
-  @keyframes fadeIn {
-    from { opacity: 0; transform: translateY(15px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-
-  .section h2 {
-    font-size: 1.8rem;
-    color: #ff2b2b;
-    text-transform: uppercase;
-    letter-spacing: 3px;
-    margin-bottom: 25px;
-    padding-bottom: 10px;
-    border-bottom: 2px solid #ff2b2b;
-    text-shadow: 0 0 10px #ff0000;
-  }
-
-  /* ===== KARTY OFERT ===== */
-  .grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    align-items: center;
     gap: 18px;
   }
 
+  .logo {
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: 1.05rem;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    white-space: nowrap;
+  }
+  .logo-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 12px var(--accent);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50% { opacity: .6; transform: scale(.85); }
+  }
+
+  .search-wrap {
+    flex: 1;
+    max-width: 420px;
+    position: relative;
+  }
+  .search-wrap svg {
+    position: absolute;
+    left: 14px; top: 50%;
+    transform: translateY(-50%);
+    color: var(--dim);
+    pointer-events: none;
+  }
+  .search-wrap input {
+    width: 100%;
+    padding: 10px 14px 10px 40px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: .88rem;
+    transition: all .2s;
+    outline: none;
+  }
+  .search-wrap input::placeholder { color: var(--dim); }
+  .search-wrap input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+
+  .top-cta {
+    padding: 9px 18px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-family: var(--font-body);
+    font-weight: 700;
+    font-size: .8rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    text-decoration: none;
+    cursor: pointer;
+    transition: all .2s;
+    white-space: nowrap;
+    box-shadow: 0 4px 16px rgba(255,46,46,0.3);
+  }
+  .top-cta:hover {
+    background: var(--accent-bright);
+    box-shadow: 0 6px 24px rgba(255,46,46,0.55);
+    transform: translateY(-1px);
+  }
+
+  /* ===== HERO ===== */
+  .hero {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 70px 24px 50px;
+    text-align: center;
+    position: relative;
+    z-index: 2;
+  }
+
+  .hero-tag {
+    display: inline-block;
+    padding: 6px 14px;
+    background: var(--accent-soft);
+    border: 1px solid rgba(255,46,46,0.3);
+    border-radius: 999px;
+    color: var(--accent-bright);
+    font-size: .72rem;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    margin-bottom: 24px;
+  }
+
+  .hero h1 {
+    font-family: var(--font-display);
+    font-size: clamp(2.4rem, 6vw, 4.4rem);
+    font-weight: 700;
+    letter-spacing: -2px;
+    line-height: 1.05;
+    margin-bottom: 20px;
+  }
+
+  .hero h1 .gradient {
+    background: linear-gradient(135deg, #ffffff 0%, #ff5252 50%, #ff2e2e 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-size: 200% 200%;
+    animation: shimmer 4s ease-in-out infinite;
+  }
+  @keyframes shimmer {
+    0%, 100% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+  }
+
+  .hero-sub {
+    max-width: 560px;
+    margin: 0 auto;
+    color: var(--muted);
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+
+  /* ===== MAIN CONTAINER ===== */
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 24px 40px;
+    position: relative;
+    z-index: 2;
+  }
+
+  /* ===== FILTERS ===== */
+  .filters {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 60px;
+    position: sticky;
+    top: 66px;
+    z-index: 40;
+    padding: 12px 0;
+    background: linear-gradient(180deg, rgba(6,6,10,0.95), rgba(6,6,10,0.85) 60%, transparent);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+
+  .filter-btn {
+    padding: 10px 20px;
+    background: var(--surface);
+    color: var(--text-soft);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    font-family: var(--font-body);
+    font-size: .8rem;
+    font-weight: 600;
+    letter-spacing: .5px;
+    cursor: pointer;
+    transition: all .22s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    white-space: nowrap;
+  }
+  .filter-btn .cnt {
+    background: rgba(255,255,255,0.06);
+    color: var(--dim);
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: .7rem;
+    font-weight: 700;
+    transition: all .22s;
+  }
+  .filter-btn:hover {
+    color: var(--text);
+    border-color: var(--border-strong);
+    background: var(--surface-2);
+  }
+  .filter-btn.active {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(255,46,46,0.35);
+  }
+  .filter-btn.active .cnt {
+    background: rgba(0,0,0,0.25);
+    color: #fff;
+  }
+
+  /* ===== SECTION ===== */
+  .section {
+    margin-bottom: 80px;
+    animation: fadeUp .5s ease;
+  }
+  .section.hidden { display: none; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .section-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 28px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .section-title {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    font-family: var(--font-display);
+    font-size: 1.55rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+    color: var(--text);
+  }
+  .section-title::before {
+    content: '';
+    width: 4px;
+    height: 22px;
+    background: var(--accent);
+    border-radius: 2px;
+    box-shadow: 0 0 14px var(--accent);
+  }
+  .section-count {
+    color: var(--dim);
+    font-size: .78rem;
+    font-weight: 600;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* ===== GRID OF CARDS ===== */
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 14px;
+  }
+
   .card {
-    background: linear-gradient(145deg, #150000, #1f0000);
-    border: 1px solid #5c0000;
-    border-radius: 12px;
-    padding: 20px;
-    transition: all .25s ease;
+    background: linear-gradient(160deg, var(--surface-2), var(--surface));
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 22px;
     position: relative;
     overflow: hidden;
+    transition: all .3s cubic-bezier(.2,.7,.2,1);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-height: 140px;
+    opacity: 0;
+    transform: translateY(15px);
+    animation: cardIn .5s ease forwards;
+  }
+  @keyframes cardIn {
+    to { opacity: 1; transform: translateY(0); }
   }
 
   .card::before {
     content: '';
     position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 3px;
-    background: linear-gradient(90deg, transparent, #ff2b2b, transparent);
+    inset: 0;
+    border-radius: inherit;
+    padding: 1px;
+    background: linear-gradient(135deg, transparent, transparent, rgba(255,46,46,0.5));
+    -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+    -webkit-mask-composite: xor;
+    mask-composite: exclude;
+    opacity: 0;
+    transition: opacity .3s;
+    pointer-events: none;
+  }
+  .card:hover::before { opacity: 1; }
+  .card:hover {
+    transform: translateY(-4px);
+    background: linear-gradient(160deg, #1c1c26, var(--surface-2));
+    box-shadow: 0 20px 40px -12px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,46,46,0.15);
   }
 
-  .card:hover {
-    transform: translateY(-5px);
-    border-color: #ff2b2b;
-    box-shadow: 0 0 25px rgba(255,0,0,0.5);
+  .card .badge {
+    position: absolute;
+    top: 14px; right: 14px;
+    padding: 3px 10px;
+    background: rgba(46,232,122,0.12);
+    color: var(--green);
+    border: 1px solid rgba(46,232,122,0.3);
+    border-radius: 999px;
+    font-size: .62rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  .card .badge.hot {
+    background: rgba(255,46,46,0.12);
+    color: var(--accent-bright);
+    border-color: rgba(255,46,46,0.35);
   }
 
   .card .name {
-    font-size: 1.05rem;
+    font-family: var(--font-display);
+    font-size: 1rem;
     font-weight: 700;
-    color: #ffb3b3;
-    margin-bottom: 8px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    color: var(--text);
+    letter-spacing: -0.2px;
+    padding-right: 40px;
+    line-height: 1.3;
   }
-
   .card .note {
-    font-size: .8rem;
-    color: #aa6666;
-    margin-bottom: 12px;
-    font-style: italic;
+    font-size: .78rem;
+    color: var(--muted);
+    line-height: 1.45;
   }
-
   .card .price {
-    font-size: 1.9rem;
-    font-weight: 900;
-    color: #ff2b2b;
-    text-shadow: 0 0 12px #ff0000;
-  }
-
-  .card .price span {
-    font-size: .95rem;
-    color: #ff8080;
-    font-weight: 500;
-    margin-left: 3px;
-  }
-
-  /* ===== KARTA Z LISTĄ (np. konta FN) ===== */
-  .list-card {
-    background: linear-gradient(145deg, #150000, #1f0000);
-    border: 1px solid #5c0000;
-    border-radius: 12px;
-    padding: 22px;
-    margin-bottom: 18px;
-  }
-
-  .list-card .name {
-    font-size: 1.1rem;
+    margin-top: auto;
+    padding-top: 14px;
+    font-family: var(--font-display);
+    font-size: 1.85rem;
     font-weight: 700;
-    color: #ffb3b3;
-    margin-bottom: 14px;
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    color: var(--accent);
+    letter-spacing: -1px;
+    line-height: 1;
   }
+  .card .price span {
+    font-family: var(--font-body);
+    font-size: .82rem;
+    color: var(--muted);
+    font-weight: 500;
+    margin-left: 4px;
+    letter-spacing: 0;
+  }
+
+  /* ===== LIST CARD ===== */
+  .list-card {
+    background: linear-gradient(160deg, var(--surface-2), var(--surface));
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    margin-bottom: 16px;
+  }
+  .list-card-head {
+    padding: 20px 24px 14px;
+    font-family: var(--font-display);
+    font-size: 1rem;
+    font-weight: 700;
+    letter-spacing: .5px;
+    color: var(--text);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .list-card-head::before {
+    content: '';
+    width: 3px;
+    height: 14px;
+    background: var(--accent);
+    border-radius: 2px;
+    box-shadow: 0 0 10px var(--accent);
+  }
+  .list-body { padding: 0 24px 14px; }
 
   .list-row {
     display: flex;
     justify-content: space-between;
-    padding: 9px 4px;
-    border-bottom: 1px dashed #4d0000;
-    font-size: .95rem;
-    transition: background .2s;
+    align-items: center;
+    gap: 16px;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: .92rem;
+    transition: padding .25s ease, background .25s;
   }
-
   .list-row:last-child { border-bottom: none; }
-  .list-row:hover { background: rgba(255,0,0,0.08); }
-  .list-row .label { color: #ffb3b3; }
-  .list-row .val { color: #ff2b2b; font-weight: 700; }
+  .list-row:hover {
+    padding-left: 8px;
+  }
+  .list-row .label { color: var(--text-soft); line-height: 1.4; }
+  .list-row .val {
+    font-family: var(--font-display);
+    color: var(--accent);
+    font-weight: 700;
+    font-size: 1rem;
+    white-space: nowrap;
+  }
 
-  /* ===== PRZYCISK DO DISCORDA ===== */
+  .list-info {
+    padding: 16px 24px 20px;
+    color: var(--muted);
+    font-size: .9rem;
+    line-height: 1.7;
+  }
+
   .dc-btn {
-    display: inline-block;
-    margin-top: 18px;
-    padding: 12px 28px;
-    background: #ff2b2b;
-    color: #0a0000;
-    font-weight: 800;
-    letter-spacing: 1.5px;
-    text-transform: uppercase;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    margin: 4px 24px 22px;
+    padding: 12px 22px;
+    background: var(--accent);
+    color: #fff;
     text-decoration: none;
-    border-radius: 8px;
+    border-radius: 10px;
+    font-weight: 700;
+    font-size: .82rem;
+    letter-spacing: 1.2px;
+    text-transform: uppercase;
     transition: all .25s;
-    box-shadow: 0 0 15px rgba(255,0,0,0.5);
+    box-shadow: 0 4px 20px rgba(255,46,46,0.3);
   }
-
   .dc-btn:hover {
-    background: #ff5555;
-    box-shadow: 0 0 30px #ff0000;
-    transform: scale(1.04);
+    background: var(--accent-bright);
+    box-shadow: 0 8px 28px rgba(255,46,46,0.55);
+    transform: translateY(-2px);
+  }
+  .dc-btn svg { width: 16px; height: 16px; }
+
+  /* ===== EMPTY STATE ===== */
+  .empty-state {
+    text-align: center;
+    padding: 80px 20px;
+    color: var(--muted);
+    display: none;
+  }
+  .empty-state.show { display: block; }
+  .empty-state .icon { font-size: 3rem; margin-bottom: 14px; opacity: .5; }
+  .empty-state h3 { font-family: var(--font-display); color: var(--text-soft); margin-bottom: 6px; }
+
+  /* ===== BACK TO TOP ===== */
+  .back-top {
+    position: fixed;
+    bottom: 28px;
+    right: 28px;
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    background: var(--surface-2);
+    border: 1px solid var(--border-strong);
+    color: var(--text);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    opacity: 0;
+    transform: translateY(10px);
+    pointer-events: none;
+    transition: all .3s;
+    z-index: 60;
+    backdrop-filter: blur(10px);
+  }
+  .back-top.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
+  .back-top:hover {
+    background: var(--accent);
+    border-color: var(--accent);
+    box-shadow: 0 0 25px var(--accent-glow);
+    transform: translateY(-3px);
   }
 
-  /* ===== STOPKA ===== */
+  /* ===== FOOTER ===== */
   footer {
+    margin-top: 80px;
+    padding: 40px 24px;
+    border-top: 1px solid var(--border);
     text-align: center;
-    margin-top: 60px;
-    padding-top: 25px;
-    border-top: 1px solid #4d0000;
-    color: #883333;
-    font-size: .85rem;
+    color: var(--dim);
+    font-size: .78rem;
     letter-spacing: 2px;
+    text-transform: uppercase;
+    position: relative;
+    z-index: 2;
+  }
+  footer .row {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  footer strong { color: var(--accent); font-weight: 700; }
+
+  /* ===== RESPONSIVE ===== */
+  @media (max-width: 720px) {
+    .topbar-inner { padding: 12px 16px; gap: 12px; }
+    .logo { font-size: .85rem; letter-spacing: 2px; }
+    .logo-text { display: none; }
+    .search-wrap { max-width: none; }
+    .top-cta { padding: 9px 14px; font-size: .72rem; }
+    .top-cta .cta-text { display: none; }
+    .hero { padding: 45px 16px 30px; }
+    .container { padding: 0 16px 30px; }
+    .filters { top: 58px; gap: 8px; margin-bottom: 40px; }
+    .filter-btn { padding: 8px 14px; font-size: .74rem; }
+    .filter-btn .cnt { display: none; }
+    .grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 10px; }
+    .card { padding: 16px; min-height: 130px; }
+    .card .price { font-size: 1.5rem; }
+    .card .name { font-size: .9rem; padding-right: 0; }
+    .section-title { font-size: 1.2rem; }
+    .list-card-head { padding: 16px 18px 10px; font-size: .92rem; }
+    .list-body { padding: 0 18px 10px; }
+    .list-row { font-size: .85rem; }
+    .list-row .val { font-size: .92rem; }
+    .list-info { padding: 12px 18px 16px; font-size: .85rem; }
+    .dc-btn { margin: 4px 18px 18px; }
+    .back-top { bottom: 20px; right: 16px; width: 42px; height: 42px; }
+    footer .row { justify-content: center; text-align: center; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
   }
 </style>
 </head>
 <body>
 
-<header>
-  <h1>Fabric Shop</h1>
-  <p>// CENNIK //</p>
+<div class="bg-orb bg-orb-1"></div>
+<div class="bg-orb bg-orb-2"></div>
+<div class="scroll-progress" id="scrollProgress"></div>
+
+<!-- ===== STICKY HEADER ===== -->
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="logo">
+      <span class="logo-dot"></span>
+      <span class="logo-text">Fabric Shop</span>
+    </div>
+    <div class="search-wrap">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.5-4.5"/></svg>
+      <input type="text" id="searchInput" placeholder="Szukaj oferty… (np. netflix, steam, robux)">
+    </div>
+    <a class="top-cta" href="https://discord.gg/Dszy6aMqvP" target="_blank" rel="noopener">
+      <span>Discord</span>
+    </a>
+  </div>
 </header>
 
-
-<!-- PRZYCISKI KATEGORII -->
-<nav class="categories">
-  <button class="cat-btn" data-target="streaming">🎬 Streaming</button>
-  <button class="cat-btn" data-target="gry">🎮 Gry</button>
-  <button class="cat-btn" data-target="social">📈 Social Boost</button>
-  <button class="cat-btn" data-target="fake">👥 Fake Slot</button>
-  <button class="cat-btn" data-target="inne">🛠 Inne usługi</button>
-  <button class="cat-btn" data-target="metody">🧪 Metody</button>
-</nav>
-
-<!-- ============ STREAMING ============ -->
-<section class="section" id="streaming">
-  <h2>🎬 Streaming</h2>
-  <div class="grid">
-
-    <div class="card">
-      <div class="name">Netflix</div>
-      <div class="note">ok. 3 lata</div>
-      <div class="price">24 <span>zł</span></div>
-    </div>
-
-    <div class="card">
-      <div class="name">Netflix</div>
-      <div class="note">1 rok</div>
-      <div class="price">17 <span>zł</span></div>
-    </div>
-
-    <div class="card">
-      <div class="name">Netflix</div>
-      <div class="note">3 miesiące</div>
-      <div class="price">14 <span>zł</span></div>
-    </div>
-
-    <div class="card">
-      <div class="name">Netflix</div>
-      <div class="note">1 miesiąc</div>
-      <div class="price">10 <span>zł</span></div>
-    </div>
-
-    <div class="card">
-      <div class="name">Disney+</div>
-      <div class="note">ok. 3 lata</div>
-      <div class="price">24 <span>zł</span></div>
-    </div>
-
-    <div class="card">
-      <div class="name">Disney+</div>
-      <div class="note">6 miesięcy</div>
-      <div class="price">16 <span>zł</span></div>
-    </div>
-
-    <div class="card">
-      <div class="name">Disney+</div>
-      <div class="note">3 miesiące</div>
-      <div class="price">12 <span>zł</span></div>
-    </div>
-
-    <div class="card">
-      <div class="name">YouTube Premium</div>
-      <div class="note">Klucz — na Twoje konto • 1 miesiąc</div>
-      <div class="price">17 <span>zł</span></div>
-    </div>
-
-    <div class="card">
-      <div class="name">YouTube Premium</div>
-      <div class="note">1 rok • nowe konto</div>
-      <div class="price">34 <span>zł</span></div>
-    </div>
-
-    <div class="card">
-      <div class="name">YouTube Premium</div>
-      <div class="note">1 miesiąc • nowe konto</div>
-      <div class="price">14 <span>zł</span></div>
-    </div>
-
-    <div class="card">
-      <div class="name">Gemini Pro AI + Google 5TB</div>
-      <div class="note">Storage w zestawie</div>
-      <div class="price">26 <span>zł</span></div>
-    </div>
-
-    <div class="card">
-      <div class="name">CapCut Pro</div>
-      <div class="note">1 miesiąc</div>
-      <div class="price">12 <span>zł</span></div>
-    </div>
-
-    <div class="card">
-      <div class="name">CapCut Pro</div>
-      <div class="note">na zawsze</div>
-      <div class="price">30 <span>zł</span></div>
-    </div>
-
-    <div class="card">
-      <div class="name">ChatGPT Plus</div>
-      <div class="note">1 miesiąc</div>
-      <div class="price">28 <span>zł</span></div>
-    </div>
-
-    <div class="card">
-      <div class="name">ChatGPT Plus</div>
-      <div class="note">6 miesięcy</div>
-      <div class="price">45 <span>zł</span></div>
-    </div>
-
-    <div class="card">
-      <div class="name">ChatGPT Plus</div>
-      <div class="note">1 rok</div>
-      <div class="price">55 <span>zł</span></div>
-    </div>
-
-  </div>
+<!-- ===== HERO ===== -->
+<section class="hero">
+  <div class="hero-tag">Cennik</div>
+  <h1>Wszystko, czego<br><span class="gradient">potrzebujesz.</span></h1>
+  <p class="hero-sub">Wirtualne usługi, gry, streaming i boosty — w jednym miejscu. Przejrzyste ceny, szybka realizacja.</p>
 </section>
 
-<!-- ============ GRY ============ -->
-<section class="section" id="gry">
-  <h2>🎮 Gry</h2>
-  <div class="grid">
+<div class="container">
 
-    <div class="card">
-      <div class="name">Konto Minecraft</div>
-      <div class="price">45 <span>zł</span></div>
+  <!-- ===== FILTERS ===== -->
+  <nav class="filters" id="filters">
+    <button class="filter-btn active" data-cat="all">Wszystko <span class="cnt" id="cnt-all">0</span></button>
+    <button class="filter-btn" data-cat="streaming">Streaming <span class="cnt" id="cnt-streaming">0</span></button>
+    <button class="filter-btn" data-cat="gry">Gry <span class="cnt" id="cnt-gry">0</span></button>
+    <button class="filter-btn" data-cat="social">Social Boost <span class="cnt" id="cnt-social">1</span></button>
+    <button class="filter-btn" data-cat="fake">Fake Slot <span class="cnt" id="cnt-fake">1</span></button>
+    <button class="filter-btn" data-cat="inne">Inne <span class="cnt" id="cnt-inne">0</span></button>
+    <button class="filter-btn" data-cat="metody">Metody <span class="cnt" id="cnt-metody">0</span></button>
+  </nav>
+
+  <!-- ============ STREAMING ============ -->
+  <section class="section" data-cat="streaming">
+    <div class="section-head">
+      <h2 class="section-title">Streaming</h2>
+      <span class="section-count">16 pozycji</span>
+    </div>
+    <div class="grid">
+
+      <div class="card" data-search="netflix 3 lata">
+        <div class="name">Netflix</div>
+        <div class="note">ok. 3 lata</div>
+        <div class="price">24 <span>zł</span></div>
+      </div>
+
+      <div class="card" data-search="netflix rok 1 rok">
+        <div class="name">Netflix</div>
+        <div class="note">1 rok</div>
+        <div class="price">17 <span>zł</span></div>
+      </div>
+
+      <div class="card" data-search="netflix 3 miesiace">
+        <div class="name">Netflix</div>
+        <div class="note">3 miesiące</div>
+        <div class="price">14 <span>zł</span></div>
+      </div>
+
+      <div class="card" data-search="netflix miesiac 1 miesiac">
+        <div class="name">Netflix</div>
+        <div class="note">1 miesiąc</div>
+        <div class="price">10 <span>zł</span></div>
+      </div>
+
+      <div class="card" data-search="disney plus 3 lata">
+        <div class="name">Disney+</div>
+        <div class="note">ok. 3 lata</div>
+        <div class="price">24 <span>zł</span></div>
+      </div>
+
+      <div class="card" data-search="disney plus 6 miesiecy">
+        <div class="name">Disney+</div>
+        <div class="note">6 miesięcy</div>
+        <div class="price">16 <span>zł</span></div>
+      </div>
+
+      <div class="card" data-search="disney plus 3 miesiace">
+        <div class="name">Disney+</div>
+        <div class="note">3 miesiące</div>
+        <div class="price">12 <span>zł</span></div>
+      </div>
+
+      <div class="card" data-search="youtube premium klucz miesiac">
+        <div class="badge hot">Klucz</div>
+        <div class="name">YouTube Premium</div>
+        <div class="note">Klucz • na Twoje konto • 1 miesiąc</div>
+        <div class="price">17 <span>zł</span></div>
+      </div>
+
+      <div class="card" data-search="youtube premium rok nowe konto">
+        <div class="name">YouTube Premium</div>
+        <div class="note">1 rok • nowe konto</div>
+        <div class="price">34 <span>zł</span></div>
+      </div>
+
+      <div class="card" data-search="youtube premium miesiac nowe konto">
+        <div class="name">YouTube Premium</div>
+        <div class="note">1 miesiąc • nowe konto</div>
+        <div class="price">14 <span>zł</span></div>
+      </div>
+
+      <div class="card" data-search="gemini pro ai google 5tb storage">
+        <div class="name">Gemini Pro AI + Google 5TB</div>
+        <div class="note">Storage w zestawie</div>
+        <div class="price">26 <span>zł</span></div>
+      </div>
+
+      <div class="card" data-search="capcut pro miesiac">
+        <div class="name">CapCut Pro</div>
+        <div class="note">1 miesiąc</div>
+        <div class="price">12 <span>zł</span></div>
+      </div>
+
+      <div class="card" data-search="capcut pro na zawsze">
+        <div class="badge">Best</div>
+        <div class="name">CapCut Pro</div>
+        <div class="note">na zawsze</div>
+        <div class="price">30 <span>zł</span></div>
+      </div>
+
+      <div class="card" data-search="chatgpt plus miesiac">
+        <div class="name">ChatGPT Plus</div>
+        <div class="note">1 miesiąc</div>
+        <div class="price">28 <span>zł</span></div>
+      </div>
+
+      <div class="card" data-search="chatgpt plus 6 miesiecy">
+        <div class="name">ChatGPT Plus</div>
+        <div class="note">6 miesięcy</div>
+        <div class="price">45 <span>zł</span></div>
+      </div>
+
+      <div class="card" data-search="chatgpt plus rok">
+        <div class="name">ChatGPT Plus</div>
+        <div class="note">1 rok</div>
+        <div class="price">55 <span>zł</span></div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- ============ GRY ============ -->
+  <section class="section" data-cat="gry">
+    <div class="section-head">
+      <h2 class="section-title">Gry</h2>
+      <span class="section-count">11 pozycji</span>
+    </div>
+    <div class="grid">
+
+      <div class="card" data-search="minecraft konto">
+        <div class="name">Konto Minecraft</div>
+        <div class="note">Pełny dostęp</div>
+        <div class="price">45 <span>zł</span></div>
+      </div>
+
+      <div class="card" data-search="gta v konto">
+        <div class="name">Konto GTA V</div>
+        <div class="note">Pełny dostęp</div>
+        <div class="price">35 <span>zł</span></div>
+      </div>
+
+      <div class="card" data-search="gra steam kazda gra">
+        <div class="badge hot">-40%</div>
+        <div class="name">Każda gra Steam</div>
+        <div class="note">Płacisz 60% ceny gry na Steamie</div>
+        <div class="price">60 <span>% ceny</span></div>
+      </div>
+
+      <div class="card" data-search="robuxy robux 1000">
+        <div class="name">Robuxy</div>
+        <div class="note">1000 robuxów</div>
+        <div class="price">45 <span>zł</span></div>
+      </div>
+
     </div>
 
-    <div class="card">
-      <div class="name">Konto GTA V</div>
-      <div class="price">35 <span>zł</span></div>
+    <div class="list-card" style="margin-top:20px">
+      <div class="list-card-head">Konta Fortnite z V-Dolcami</div>
+      <div class="list-body">
+        <div class="list-row" data-search="fortnite 30000 30 000 v bucks"><span class="label">30 000 V-Bucks</span><span class="val">250 PLN</span></div>
+        <div class="list-row" data-search="fortnite 20000 20 000 v bucks"><span class="label">20 000 V-Bucks</span><span class="val">200 PLN</span></div>
+        <div class="list-row" data-search="fortnite 13000 13 000 v bucks"><span class="label">13 000 V-Bucks</span><span class="val">130 PLN</span></div>
+        <div class="list-row" data-search="fortnite 8000 8 000 v bucks"><span class="label">8 000 V-Bucks</span><span class="val">90 PLN</span></div>
+        <div class="list-row" data-search="fortnite 6000 6 000 v bucks"><span class="label">6 000 V-Bucks</span><span class="val">70 PLN</span></div>
+        <div class="list-row" data-search="fortnite 4000 4 000 v bucks"><span class="label">4 000 V-Bucks</span><span class="val">45 PLN</span></div>
+        <div class="list-row" data-search="fortnite 2500 2 500 v bucks"><span class="label">2 500 V-Bucks</span><span class="val">30 PLN</span></div>
+      </div>
     </div>
+  </section>
 
-    <div class="card">
-      <div class="name">Każda gra Steam</div>
-      <div class="note">Płacisz 60% ceny gry na Steamie</div>
-      <div class="price">60 <span>% ceny</span></div>
+  <!-- ============ SOCIAL BOOST ============ -->
+  <section class="section" data-cat="social">
+    <div class="section-head">
+      <h2 class="section-title">Social Boost</h2>
+      <span class="section-count">Na ticket</span>
     </div>
-
-    <div class="card">
-      <div class="name">Robuxy</div>
-      <div class="note">1000 robuxów</div>
-      <div class="price">45 <span>zł</span></div>
+    <div class="list-card" data-search="social boost">
+      <div class="list-card-head">Ceny przydzielane indywidualnie</div>
+      <div class="list-info">
+        Wszystkie ceny Social Boost ustalane są indywidualnie poprzez ticket na naszym Discordzie. Napisz do nas — wycenimy Twój projekt.
+      </div>
+      <a class="dc-btn" href="https://discord.gg/Dszy6aMqvP" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.3 4.4A19.8 19.8 0 0 0 15.4 3l-.3.5a18.3 18.3 0 0 1 4.3 1.4 15.7 15.7 0 0 0-14.8 0A18.3 18.3 0 0 1 8.9 3.5L8.6 3a19.8 19.8 0 0 0-4.9 1.4A20.3 20.3 0 0 0 .2 18a20 20 0 0 0 6 3l1.2-1.7c-.7-.3-1.3-.6-2-.9l.5-.4a14.4 14.4 0 0 0 12.2 0l.5.4c-.7.3-1.3.6-2 .9l1.2 1.7a20 20 0 0 0 6-3 20.3 20.3 0 0 0-3.5-13.6ZM8.3 15.3c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4Zm7.4 0c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4Z"/></svg>
+        Napisz na Discord
+      </a>
     </div>
+  </section>
 
+  <!-- ============ FAKE SLOT ============ -->
+  <section class="section" data-cat="fake">
+    <div class="section-head">
+      <h2 class="section-title">Fake Slot</h2>
+      <span class="section-count">Na ticket</span>
+    </div>
+    <div class="list-card" data-search="fake slot">
+      <div class="list-card-head">Ceny przydzielane indywidualnie</div>
+      <div class="list-info">
+        Ceny za Fake Slot ustalane są indywidualnie poprzez ticket na naszym Discordzie.
+      </div>
+      <a class="dc-btn" href="https://discord.gg/Dszy6aMqvP" target="_blank" rel="noopener">
+        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.3 4.4A19.8 19.8 0 0 0 15.4 3l-.3.5a18.3 18.3 0 0 1 4.3 1.4 15.7 15.7 0 0 0-14.8 0A18.3 18.3 0 0 1 8.9 3.5L8.6 3a19.8 19.8 0 0 0-4.9 1.4A20.3 20.3 0 0 0 .2 18a20 20 0 0 0 6 3l1.2-1.7c-.7-.3-1.3-.6-2-.9l.5-.4a14.4 14.4 0 0 0 12.2 0l.5.4c-.7.3-1.3.6-2 .9l1.2 1.7a20 20 0 0 0 6-3 20.3 20.3 0 0 0-3.5-13.6ZM8.3 15.3c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4Zm7.4 0c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4Z"/></svg>
+        Napisz na Discord
+      </a>
+    </div>
+  </section>
+
+  <!-- ============ INNE USŁUGI ============ -->
+  <section class="section" data-cat="inne">
+    <div class="section-head">
+      <h2 class="section-title">Inne usługi</h2>
+      <span class="section-count">Na ticket</span>
+    </div>
+    <div class="grid">
+
+      <div class="card" data-search="bot discord">
+        <div class="name">Bot Discord</div>
+        <div class="note">Wycena na ticket</div>
+        <div class="price" style="font-size:1.1rem;color:var(--text-soft)">Wycena</div>
+      </div>
+
+      <div class="card" data-search="strona www">
+        <div class="name">Strona WWW</div>
+        <div class="note">Wycena na ticket</div>
+        <div class="price" style="font-size:1.1rem;color:var(--text-soft)">Wycena</div>
+      </div>
+
+      <div class="card" data-search="serwer minecraft">
+        <div class="name">Serwer Minecraft</div>
+        <div class="note">Wycena na ticket</div>
+        <div class="price" style="font-size:1.1rem;color:var(--text-soft)">Wycena</div>
+      </div>
+
+    </div>
+    <a class="dc-btn" style="margin:22px 0 0" href="https://discord.gg/Dszy6aMqvP" target="_blank" rel="noopener">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M20.3 4.4A19.8 19.8 0 0 0 15.4 3l-.3.5a18.3 18.3 0 0 1 4.3 1.4 15.7 15.7 0 0 0-14.8 0A18.3 18.3 0 0 1 8.9 3.5L8.6 3a19.8 19.8 0 0 0-4.9 1.4A20.3 20.3 0 0 0 .2 18a20 20 0 0 0 6 3l1.2-1.7c-.7-.3-1.3-.6-2-.9l.5-.4a14.4 14.4 0 0 0 12.2 0l.5.4c-.7.3-1.3.6-2 .9l1.2 1.7a20 20 0 0 0 6-3 20.3 20.3 0 0 0-3.5-13.6ZM8.3 15.3c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4Zm7.4 0c-1.2 0-2.1-1.1-2.1-2.4s.9-2.4 2.1-2.4 2.2 1.1 2.1 2.4c0 1.3-.9 2.4-2.1 2.4Z"/></svg>
+      Wycena na Discordzie
+    </a>
+  </section>
+
+  <!-- ============ METODY ============ -->
+  <section class="section" data-cat="metody">
+    <div class="section-head">
+      <h2 class="section-title">Moje Metody</h2>
+      <span class="section-count">26 pozycji</span>
+    </div>
+    <div class="list-card">
+      <div class="list-card-head">Pełna lista</div>
+      <div class="list-body">
+        <div class="list-row" data-search="panel social boost"><span class="label">Panel do Social Boost</span><span class="val">19 PLN</span></div>
+        <div class="list-row" data-search="jedzenie glovo pyszne"><span class="label">Darmowe jedzenie Glovo / Pyszne</span><span class="val">12 PLN</span></div>
+        <div class="list-row" data-search="snapscore snap"><span class="label">Duża ilość Snapscore</span><span class="val">9 PLN</span></div>
+        <div class="list-row" data-search="krypto"><span class="label">Krypto bez 18 lat</span><span class="val">11 PLN</span></div>
+        <div class="list-row" data-search="vinted ubrania buty"><span class="label">Darmowe ubrania / buty, łatwy zarobek na Vinted</span><span class="val">11 PLN</span></div>
+        <div class="list-row" data-search="fn fortnite mail"><span class="label">Metoda na zmianę maila w FN mimo blokady czasowej</span><span class="val">11 PLN</span></div>
+        <div class="list-row" data-search="nike refund"><span class="label">Nike Refund</span><span class="val">10 PLN</span></div>
+        <div class="list-row" data-search="temu refund"><span class="label">Temu Refund</span><span class="val">11 PLN</span></div>
+        <div class="list-row" data-search="sms hiting"><span class="label">SMS Hiting</span><span class="val">10 PLN</span></div>
+        <div class="list-row" data-search="fps boost"><span class="label">FPS Boost, przyspieszenie komputera</span><span class="val">11 PLN</span></div>
+        <div class="list-row" data-search="discord ludzie serwer"><span class="label">Pozyskiwanie ludzi na serwer Discord</span><span class="val">13 PLN</span></div>
+        <div class="list-row" data-search="klonowanie discord"><span class="label">Klonowanie serwerów Discord</span><span class="val">9 PLN</span></div>
+        <div class="list-row" data-search="amazon gry"><span class="label">Darmowe gry (popularne) z Amazona</span><span class="val">9 PLN</span></div>
+        <div class="list-row" data-search="amazon refund"><span class="label">Amazon Refund + łatwy zarobek Amazon</span><span class="val">9 PLN</span></div>
+        <div class="list-row" data-search="adidas refund"><span class="label">Adidas Refund + łatwy zarobek Adidas</span><span class="val">9 PLN</span></div>
+        <div class="list-row" data-search="ban instagram"><span class="label">Ban komuś Instagrama</span><span class="val">9 PLN</span></div>
+        <div class="list-row" data-search="bot discord darmowy"><span class="label">Własny darmowy bot Discord</span><span class="val">9 PLN</span></div>
+        <div class="list-row" data-search="mypsc blik bank wyplata"><span class="label">Metoda na wypłatę kasy z MyPSC na BLIK / bank (0% fee)</span><span class="val">10 PLN</span></div>
+        <div class="list-row" data-search="blik krypto"><span class="label">Metoda na wymianę z BLIK-a na krypto (0% fee)</span><span class="val">10 PLN</span></div>
+        <div class="list-row" data-search="paypal krypto"><span class="label">Metoda na wymianę z PayPala na krypto (2% fee)</span><span class="val">10 PLN</span></div>
+        <div class="list-row" data-search="skrill krypto kyc"><span class="label">Metoda na wymianę ze Skrilla na krypto (3% fee, bez KYC)</span><span class="val">10 PLN</span></div>
+        <div class="list-row" data-search="bump discord"><span class="label">Pliki, które automatycznie bumpują serwer Discord</span><span class="val">12 PLN</span></div>
+        <div class="list-row" data-search="sms weryfikacja"><span class="label">Strona do tanich weryfikacji SMS</span><span class="val">13 PLN</span></div>
+        <div class="list-row" data-search="v dolce fortnite"><span class="label">Metoda na tanie V-Dolce</span><span class="val">24 PLN</span></div>
+        <div class="list-row" data-search="ekypaka"><span class="label">Metoda na tanią ekypakę</span><span class="val">24 PLN</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== EMPTY STATE ===== -->
+  <div class="empty-state" id="emptyState">
+    <div class="icon">🔍</div>
+    <h3>Brak wyników</h3>
+    <p>Nie znaleziono ofert pasujących do Twojego zapytania.</p>
   </div>
 
-  <br>
+</div>
 
-  <div class="list-card">
-    <div class="name">Konta Fortnite z V-Dolcami</div>
-    <div class="list-row"><span class="label">30 000 V-Bucks</span><span class="val">250 PLN</span></div>
-    <div class="list-row"><span class="label">20 000 V-Bucks</span><span class="val">200 PLN</span></div>
-    <div class="list-row"><span class="label">13 000 V-Bucks</span><span class="val">130 PLN</span></div>
-    <div class="list-row"><span class="label">8 000 V-Bucks</span><span class="val">90 PLN</span></div>
-    <div class="list-row"><span class="label">6 000 V-Bucks</span><span class="val">70 PLN</span></div>
-    <div class="list-row"><span class="label">4 000 V-Bucks</span><span class="val">45 PLN</span></div>
-    <div class="list-row"><span class="label">2 500 V-Bucks</span><span class="val">30 PLN</span></div>
-  </div>
-</section>
+<!-- ===== BACK TO TOP ===== -->
+<button class="back-top" id="backTop" aria-label="Do góry">
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 15 6-6 6 6"/></svg>
+</button>
 
-<!-- ============ SOCIAL BOOST ============ -->
-<section class="section" id="social">
-  <h2>📈 Social Boost</h2>
-  <div class="list-card">
-    <div class="name">Ceny przydzielane na ticket</div>
-    <p style="color:#ffb3b3; line-height:1.6;">
-      Wszystkie ceny Social Boost ustalane są indywidualnie poprzez ticket na naszym Discordzie.
-      Napisz do nas, aby otrzymać wycenę.
-    </p>
-    <a class="dc-btn" href="https://discord.gg/Dszy6aMqvP" target="_blank" rel="noopener">Dołącz na Discord</a>
-  </div>
-</section>
-
-<!-- ============ FAKE SLOT ============ -->
-<section class="section" id="fake">
-  <h2>👥 Fake Slot</h2>
-  <div class="list-card">
-    <div class="name">Ceny przydzielane na ticket</div>
-    <p style="color:#ffb3b3; line-height:1.6;">
-      Ceny za Fake Slot ustalane są indywidualnie poprzez ticket na naszym Discordzie.
-    </p>
-    <a class="dc-btn" href="https://discord.gg/Dszy6aMqvP" target="_blank" rel="noopener">Dołącz na Discord</a>
-  </div>
-</section>
-
-<!-- ============ INNE USŁUGI ============ -->
-<section class="section" id="inne">
-  <h2>🛠 Inne usługi</h2>
-  <div class="grid">
-
-    <div class="card">
-      <div class="name">Bot Discord</div>
-      <div class="note">Wycena na ticket</div>
-    </div>
-
-    <div class="card">
-      <div class="name">Strona WWW</div>
-      <div class="note">Wycena na ticket</div>
-    </div>
-
-    <div class="card">
-      <div class="name">Serwer Minecraft</div>
-      <div class="note">Wycena na ticket</div>
-    </div>
-
-  </div>
-  <br>
-  <a class="dc-btn" href="https://discord.gg/Dszy6aMqvP" target="_blank" rel="noopener">Wycena na Discordzie</a>
-</section>
-
-<!-- ============ METODY ============ -->
-<section class="section" id="metody">
-  <h2>🧪 Moje Metody</h2>
-  <div class="list-card">
-
-    <div class="list-row"><span class="label">Panel do Social Boost</span><span class="val">19 PLN</span></div>
-    <div class="list-row"><span class="label">Darmowe jedzenie Glovo / Pyszne</span><span class="val">12 PLN</span></div>
-    <div class="list-row"><span class="label">Duża ilość Snapscore</span><span class="val">9 PLN</span></div>
-    <div class="list-row"><span class="label">Krypto bez 18 lat</span><span class="val">11 PLN</span></div>
-    <div class="list-row"><span class="label">Darmowe ubrania / buty, łatwy zarobek na Vinted</span><span class="val">11 PLN</span></div>
-    <div class="list-row"><span class="label">Metoda na zmianę maila w FN mimo blokady czasowej</span><span class="val">11 PLN</span></div>
-    <div class="list-row"><span class="label">Nike Refund</span><span class="val">10 PLN</span></div>
-    <div class="list-row"><span class="label">Temu Refund</span><span class="val">11 PLN</span></div>
-    <div class="list-row"><span class="label">SMS Hiting</span><span class="val">10 PLN</span></div>
-    <div class="list-row"><span class="label">FPS Boost, przyspieszenie komputera</span><span class="val">11 PLN</span></div>
-    <div class="list-row"><span class="label">Pozyskiwanie ludzi na serwer Discord</span><span class="val">13 PLN</span></div>
-    <div class="list-row"><span class="label">Klonowanie serwerów Discord</span><span class="val">9 PLN</span></div>
-    <div class="list-row"><span class="label">Darmowe gry (popularne) z Amazona</span><span class="val">9 PLN</span></div>
-    <div class="list-row"><span class="label">Amazon Refund + łatwy zarobek Amazon</span><span class="val">9 PLN</span></div>
-    <div class="list-row"><span class="label">Adidas Refund + łatwy zarobek Adidas</span><span class="val">9 PLN</span></div>
-    <div class="list-row"><span class="label">Ban komuś Instagrama</span><span class="val">9 PLN</span></div>
-    <div class="list-row"><span class="label">Własny darmowy bot Discord</span><span class="val">9 PLN</span></div>
-    <div class="list-row"><span class="label">Metoda na wypłatę kasy z MyPSC na BLIK / bank (0% fee)</span><span class="val">10 PLN</span></div>
-    <div class="list-row"><span class="label">Metoda na wymianę z BLIK-a na krypto (0% fee)</span><span class="val">10 PLN</span></div>
-    <div class="list-row"><span class="label">Metoda na wymianę z PayPala na krypto (2% fee)</span><span class="val">10 PLN</span></div>
-    <div class="list-row"><span class="label">Metoda na wymianę ze Skrilla na krypto (3% fee, bez KYC)</span><span class="val">10 PLN</span></div>
-    <div class="list-row"><span class="label">Pliki, które automatycznie bumpują serwer Discord</span><span class="val">12 PLN</span></div>
-    <div class="list-row"><span class="label">Strona do tanich weryfikacji SMS</span><span class="val">13 PLN</span></div>
-    <div class="list-row"><span class="label">Metoda na tanie V-Dolce</span><span class="val">24 PLN</span></div>
-    <div class="list-row"><span class="label">Metoda na tanią ekypakę</span><span class="val">24 PLN</span></div>
-
-  </div>
-</section>
-
+<!-- ===== FOOTER ===== -->
 <footer>
-  FABRIC SHOP © 
+  <div class="row">
+    <div>Fabric Shop © <strong>2026</strong></div>
+    <div>Wszystkie prawa zastrzeżone</div>
+  </div>
 </footer>
 
 <script>
-  // Płynne przewijanie do wybranej kategorii
-  const buttons = document.querySelectorAll('.cat-btn');
+  // ===== SCROLL PROGRESS =====
+  const progress = document.getElementById('scrollProgress');
+  const backTop = document.getElementById('backTop');
 
-  buttons.forEach(btn => {
-    btn.addEventListener('click', () => {
-      const targetId = btn.getAttribute('data-target');
-      const target = document.getElementById(targetId);
-      if (target) {
-        target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  window.addEventListener('scroll', () => {
+    const h = document.documentElement;
+    const p = (h.scrollTop / (h.scrollHeight - h.clientHeight)) * 100;
+    progress.style.width = p + '%';
+    backTop.classList.toggle('show', h.scrollTop > 400);
+  }, { passive: true });
 
-        buttons.forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-      }
+  backTop.addEventListener('click', () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  // ===== STAGGER CARD ANIMATIONS =====
+  document.querySelectorAll('.grid').forEach(grid => {
+    grid.querySelectorAll('.card').forEach((card, i) => {
+      card.style.animationDelay = (i * 0.04) + 's';
     });
   });
+
+  // ===== COUNTERS =====
+  function countItems(cat) {
+    const sec = document.querySelector(`.section[data-cat="${cat}"]`);
+    if (!sec) return 0;
+    const cards = sec.querySelectorAll('.card').length;
+    const rows = sec.querySelectorAll('.list-row').length;
+    const singleListCards = sec.querySelectorAll('.list-card:not(:has(.list-row))').length;
+    return cards + rows + singleListCards;
+  }
+
+  const cats = ['streaming','gry','social','fake','inne','metody'];
+  let total = 0;
+  cats.forEach(c => {
+    const n = countItems(c);
+    document.getElementById('cnt-' + c).textContent = n;
+    total += n;
+  });
+  document.getElementById('cnt-all').textContent = total;
+
+  // ===== FILTER + SEARCH =====
+  let activeCat = 'all';
+  const searchInput = document.getElementById('searchInput');
+  const emptyState = document.getElementById('emptyState');
+  const filterBtns = document.querySelectorAll('.filter-btn');
+
+  function applyFilters() {
+    const q = searchInput.value.toLowerCase().trim();
+    let anyVisible = false;
+
+    document.querySelectorAll('.section').forEach(section => {
+      const cat = section.dataset.cat;
+      const catMatch = activeCat === 'all' || cat === activeCat;
+
+      if (!catMatch) {
+        section.classList.add('hidden');
+        return;
+      }
+
+      let visibleCount = 0;
+
+      // Cards
+      section.querySelectorAll('.card').forEach(card => {
+        const txt = (card.dataset.search || card.textContent).toLowerCase();
+        const match = !q || txt.includes(q);
+        card.classList.toggle('hidden', !match);
+        card.style.display = match ? '' : 'none';
+        if (match) visibleCount++;
+      });
+
+      // List cards
+      section.querySelectorAll('.list-card').forEach(lc => {
+        const rows = lc.querySelectorAll('.list-row');
+        if (rows.length > 0) {
+          let rowMatches = 0;
+          rows.forEach(row => {
+            const txt = (row.dataset.search || row.textContent).toLowerCase();
+            const match = !q || txt.includes(q);
+            row.style.display = match ? '' : 'none';
+            if (match) rowMatches++;
+          });
+          lc.style.display = rowMatches > 0 ? '' : 'none';
+          if (rowMatches > 0) visibleCount += rowMatches;
+        } else {
+          const txt = (lc.dataset.search || lc.textContent).toLowerCase();
+          const match = !q || txt.includes(q);
+          lc.style.display = match ? '' : 'none';
+          if (match) visibleCount++;
+        }
+      });
+
+      if (visibleCount === 0) {
+        section.classList.add('hidden');
+      } else {
+        section.classList.remove('hidden');
+        anyVisible = true;
+      }
+    });
+
+    emptyState.classList.toggle('show', !anyVisible);
+  }
+
+  filterBtns.forEach(btn => {
+    btn.addEventListener('click', () => {
+      filterBtns.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      activeCat = btn.dataset.cat;
+      applyFilters();
+    });
+  });
+
+  let searchTimeout;
+  searchInput.addEventListener('input', () => {
+    clearTimeout(searchTimeout);
+    searchTimeout = setTimeout(applyFilters, 120);
+  });
+
+  // ===== REVEAL ON SCROLL (sections) =====
+  const io = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        e.target.style.animation = 'fadeUp .6s ease';
+      }
+    });
+  }, { threshold: 0.05 });
+
+  document.querySelectorAll('.section').forEach(s => io.observe(s));
 </script>
 
 </body>
