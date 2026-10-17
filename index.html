@@ -12,10 +12,8 @@
 
   :root {
     --bg: #06060a;
-    --bg-soft: #0b0b10;
     --surface: #0e0e15;
     --surface-2: #14141c;
-    --surface-3: #1a1a24;
     --border: rgba(255,255,255,0.07);
     --border-strong: rgba(255,255,255,0.14);
     --text: #f2f2f7;
@@ -28,9 +26,11 @@
     --accent-soft: rgba(255,46,46,0.1);
     --green: #2ee87a;
     --radius: 16px;
-    --radius-sm: 10px;
     --font-display: 'Space Grotesk', system-ui, sans-serif;
     --font-body: 'Inter', system-ui, sans-serif;
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-in-out-quart: cubic-bezier(0.76, 0, 0.24, 1);
+    --ease-out-quint: cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   html { scroll-behavior: smooth; scroll-padding-top: 90px; }
@@ -46,8 +46,8 @@
     -webkit-font-smoothing: antialiased;
     position: relative;
   }
+  body.loading { overflow: hidden; }
 
-  /* Grain overlay */
   body::before {
     content: '';
     position: fixed;
@@ -58,7 +58,204 @@
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   }
 
-  /* Animated background orbs */
+  /* ============================================================
+     PRELOADER — kurtyna + duży licznik + gruby pasek z glow
+     ============================================================ */
+  .preloader {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    pointer-events: none;
+  }
+
+  .preloader-panel {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 50.5%;
+    background: #050508;
+    will-change: transform;
+    transition: transform 1s var(--ease-in-out-quart);
+  }
+  .preloader-panel.top {
+    top: 0;
+    border-bottom: 1px solid rgba(255,46,46,0.15);
+  }
+  .preloader-panel.bottom {
+    bottom: 0;
+    border-top: 1px solid rgba(255,46,46,0.15);
+  }
+
+  .preloader-inner {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 32px;
+    z-index: 1;
+    transition: opacity .4s ease, transform .4s ease;
+  }
+
+  .preloader-brand {
+    overflow: hidden;
+    line-height: 1.1;
+    padding: 4px 0;
+  }
+  .preloader-brand-text {
+    display: inline-block;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(1.4rem, 4vw, 1.9rem);
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    color: var(--text);
+    transform: translateY(110%);
+    animation: brandIn 1s var(--ease-out-expo) .1s forwards;
+  }
+  @keyframes brandIn {
+    to { transform: translateY(0); }
+  }
+
+  /* --- METER: licznik + pasek + etykieta --- */
+  .preloader-meter {
+    width: min(340px, 74vw);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+
+  /* Duży licznik procentowy NAD paskiem */
+  .preloader-percent {
+    display: flex;
+    align-items: baseline;
+    justify-content: center;
+    gap: 3px;
+    font-family: var(--font-display);
+    font-variant-numeric: tabular-nums;
+    line-height: 1;
+  }
+  .preloader-percent strong {
+    font-size: clamp(2.2rem, 6vw, 3rem);
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: -1px;
+    text-shadow:
+      0 0 20px rgba(255,46,46,0.35),
+      0 0 40px rgba(255,46,46,0.15);
+    transition: text-shadow .3s;
+  }
+  .preloader-percent .pct-sign {
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--dim);
+    letter-spacing: 1px;
+    margin-left: 2px;
+  }
+
+  /* Gruby pasek (8px) z animowanym gradientem, glow i shine */
+  .preloader-bar {
+    position: relative;
+    width: 100%;
+    height: 8px;
+    background: rgba(255,255,255,0.07);
+    border-radius: 99px;
+    overflow: hidden;
+    box-shadow:
+      inset 0 1px 3px rgba(0,0,0,0.7),
+      0 0 0 1px rgba(255,255,255,0.04);
+  }
+  .preloader-bar-fill {
+    position: relative;
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg,
+      #ff2e2e 0%,
+      #ff5252 25%,
+      #ff8a8a 50%,
+      #ff5252 75%,
+      #ff2e2e 100%);
+    background-size: 200% 100%;
+    border-radius: 99px;
+    box-shadow:
+      0 0 14px rgba(255,46,46,0.75),
+      0 0 28px rgba(255,46,46,0.45),
+      0 0 44px rgba(255,46,46,0.2);
+    transition: width .22s var(--ease-out-quint);
+    animation: barFlow 2.4s linear infinite;
+    will-change: width, background-position;
+  }
+  @keyframes barFlow {
+    0% { background-position: 0% 0; }
+    100% { background-position: 200% 0; }
+  }
+
+  /* Przelatujący błysk na pasku (shine) */
+  .preloader-bar-shine {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    border-radius: 99px;
+    z-index: 1;
+  }
+  .preloader-bar-shine::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -70%;
+    width: 60%;
+    height: 100%;
+    background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(255,255,255,0.5) 40%,
+      rgba(255,255,255,0.85) 50%,
+      rgba(255,255,255,0.5) 60%,
+      transparent 100%);
+    filter: blur(1px);
+    animation: shineSweep 1.8s ease-in-out infinite;
+  }
+  @keyframes shineSweep {
+    0% { left: -70%; }
+    100% { left: 130%; }
+  }
+
+  /* Etykieta pod paskiem z animowanymi kropkami */
+  .preloader-label {
+    font-size: .68rem;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    color: var(--dim);
+    font-weight: 600;
+  }
+  .preloader-label::after {
+    content: '';
+    display: inline-block;
+    width: 1.2em;
+    text-align: left;
+    animation: dots 1.6s steps(4, end) infinite;
+  }
+  @keyframes dots {
+    0% { content: ''; }
+    25% { content: '.'; }
+    50% { content: '..'; }
+    75% { content: '...'; }
+  }
+
+  /* Stan "done" — kurtyna się rozjeżdża */
+  .preloader.done .preloader-inner {
+    opacity: 0;
+    transform: translateY(-16px);
+  }
+  .preloader.done .preloader-panel.top { transform: translateY(-100%); }
+  .preloader.done .preloader-panel.bottom { transform: translateY(100%); }
+  .preloader.gone { display: none; }
+
+  /* ============================================================
+     Tło — orby
+     ============================================================ */
   .bg-orb {
     position: fixed;
     border-radius: 50%;
@@ -88,7 +285,6 @@
     50% { transform: translate(-60px, -80px) scale(1.1); }
   }
 
-  /* Custom scrollbar */
   ::-webkit-scrollbar { width: 10px; height: 10px; }
   ::-webkit-scrollbar-track { background: var(--bg); }
   ::-webkit-scrollbar-thumb {
@@ -98,7 +294,9 @@
   }
   ::-webkit-scrollbar-thumb:hover { background: var(--accent); }
 
-  /* ===== SCROLL PROGRESS ===== */
+  /* ============================================================
+     SCROLL PROGRESS
+     ============================================================ */
   .scroll-progress {
     position: fixed;
     top: 0; left: 0;
@@ -107,19 +305,23 @@
     background: linear-gradient(90deg, var(--accent), #ff8a8a);
     box-shadow: 0 0 12px var(--accent);
     z-index: 100;
-    transition: width .1s ease;
   }
 
-  /* ===== STICKY HEADER ===== */
+  /* ============================================================
+     HEADER
+     ============================================================ */
   .topbar {
     position: sticky;
     top: 0;
     z-index: 50;
-    background: rgba(6,6,10,0.75);
-    backdrop-filter: blur(18px) saturate(140%);
-    -webkit-backdrop-filter: blur(18px) saturate(140%);
+    background: rgba(6,6,10,0.72);
+    backdrop-filter: blur(20px) saturate(150%);
+    -webkit-backdrop-filter: blur(20px) saturate(150%);
     border-bottom: 1px solid var(--border);
+    transform: translateY(-100%);
+    transition: transform .8s var(--ease-out-expo);
   }
+  body.ready .topbar { transform: translateY(0); }
 
   .topbar-inner {
     max-width: 1200px;
@@ -127,7 +329,7 @@
     padding: 14px 24px;
     display: flex;
     align-items: center;
-    gap: 18px;
+    gap: 12px;
   }
 
   .logo {
@@ -165,7 +367,9 @@
     transform: translateY(-50%);
     color: var(--dim);
     pointer-events: none;
+    transition: color .2s;
   }
+  .search-wrap:focus-within svg { color: var(--accent); }
   .search-wrap input {
     width: 100%;
     padding: 10px 14px 10px 40px;
@@ -175,13 +379,41 @@
     color: var(--text);
     font-family: var(--font-body);
     font-size: .88rem;
-    transition: all .2s;
+    transition: all .25s var(--ease-out-expo);
     outline: none;
   }
   .search-wrap input::placeholder { color: var(--dim); }
   .search-wrap input:focus {
     border-color: var(--accent);
     box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+
+  .refresh-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text-soft);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    transition: all .25s var(--ease-out-expo);
+    flex-shrink: 0;
+  }
+  .refresh-btn:hover {
+    color: var(--text);
+    border-color: var(--border-strong);
+    background: var(--surface-2);
+    transform: rotate(-30deg);
+  }
+  .refresh-btn svg { width: 16px; height: 16px; }
+  .refresh-btn.spinning svg {
+    animation: spinOnce .9s var(--ease-in-out-quart);
+  }
+  @keyframes spinOnce {
+    0% { transform: rotate(0); }
+    100% { transform: rotate(720deg); }
   }
 
   .top-cta {
@@ -197,9 +429,10 @@
     text-transform: uppercase;
     text-decoration: none;
     cursor: pointer;
-    transition: all .2s;
+    transition: all .25s var(--ease-out-expo);
     white-space: nowrap;
     box-shadow: 0 4px 16px rgba(255,46,46,0.3);
+    flex-shrink: 0;
   }
   .top-cta:hover {
     background: var(--accent-bright);
@@ -207,7 +440,9 @@
     transform: translateY(-1px);
   }
 
-  /* ===== HERO ===== */
+  /* ============================================================
+     HERO
+     ============================================================ */
   .hero {
     max-width: 1200px;
     margin: 0 auto;
@@ -229,6 +464,14 @@
     letter-spacing: 2px;
     text-transform: uppercase;
     margin-bottom: 24px;
+    opacity: 0;
+    transform: translateY(10px);
+    transition: opacity .7s var(--ease-out-expo) .3s,
+                transform .7s var(--ease-out-expo) .3s;
+  }
+  body.ready .hero-tag {
+    opacity: 1;
+    transform: translateY(0);
   }
 
   .hero h1 {
@@ -238,6 +481,23 @@
     letter-spacing: -2px;
     line-height: 1.05;
     margin-bottom: 20px;
+  }
+
+  .word {
+    display: inline-block;
+    overflow: hidden;
+    vertical-align: top;
+    padding: 0 0.06em 0.15em 0.06em;
+    margin: 0 -0.06em -0.15em -0.06em;
+  }
+  .word > span {
+    display: inline-block;
+    transform: translateY(110%);
+    transition: transform 1.1s var(--ease-out-expo);
+  }
+  body.ready .word > span {
+    transform: translateY(0);
+    transition-delay: calc(0.4s + var(--i) * 0.09s);
   }
 
   .hero h1 .gradient {
@@ -259,9 +519,19 @@
     color: var(--muted);
     font-size: 1rem;
     line-height: 1.6;
+    opacity: 0;
+    transform: translateY(14px);
+    transition: opacity .8s var(--ease-out-expo) .8s,
+                transform .8s var(--ease-out-expo) .8s;
+  }
+  body.ready .hero-sub {
+    opacity: 1;
+    transform: translateY(0);
   }
 
-  /* ===== MAIN CONTAINER ===== */
+  /* ============================================================
+     KONTENER
+     ============================================================ */
   .container {
     max-width: 1200px;
     margin: 0 auto;
@@ -270,7 +540,9 @@
     z-index: 2;
   }
 
-  /* ===== FILTERS ===== */
+  /* ============================================================
+     FILTRY
+     ============================================================ */
   .filters {
     display: flex;
     flex-wrap: wrap;
@@ -297,11 +569,13 @@
     font-weight: 600;
     letter-spacing: .5px;
     cursor: pointer;
-    transition: all .22s ease;
+    transition: all .3s var(--ease-out-expo);
     display: inline-flex;
     align-items: center;
     gap: 8px;
     white-space: nowrap;
+    position: relative;
+    overflow: hidden;
   }
   .filter-btn .cnt {
     background: rgba(255,255,255,0.06);
@@ -310,7 +584,7 @@
     border-radius: 999px;
     font-size: .7rem;
     font-weight: 700;
-    transition: all .22s;
+    transition: all .3s;
   }
   .filter-btn:hover {
     color: var(--text);
@@ -328,17 +602,21 @@
     color: #fff;
   }
 
-  /* ===== SECTION ===== */
+  /* ============================================================
+     SEKCJE
+     ============================================================ */
   .section {
     margin-bottom: 80px;
-    animation: fadeUp .5s ease;
+    opacity: 0;
+    transform: translateY(30px);
+    transition: opacity .8s var(--ease-out-expo),
+                transform .8s var(--ease-out-expo);
+  }
+  .section.revealed {
+    opacity: 1;
+    transform: translateY(0);
   }
   .section.hidden { display: none; }
-
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-  }
 
   .section-head {
     display: flex;
@@ -375,7 +653,9 @@
     text-transform: uppercase;
   }
 
-  /* ===== GRID OF CARDS ===== */
+  /* ============================================================
+     KARTY
+     ============================================================ */
   .grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
@@ -389,18 +669,32 @@
     padding: 22px;
     position: relative;
     overflow: hidden;
-    transition: all .3s cubic-bezier(.2,.7,.2,1);
     display: flex;
     flex-direction: column;
     gap: 6px;
     min-height: 140px;
     opacity: 0;
     transform: translateY(15px);
-    animation: cardIn .5s ease forwards;
+    transition: opacity .6s var(--ease-out-expo),
+                transform .6s var(--ease-out-expo),
+                box-shadow .3s,
+                background .3s;
   }
-  @keyframes cardIn {
-    to { opacity: 1; transform: translateY(0); }
+  .card.in {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: calc(var(--i, 0) * 40ms);
   }
+  .card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, transparent 30%, rgba(255,46,46,0.08) 50%, transparent 70%);
+    transform: translateX(-100%);
+    transition: transform .7s var(--ease-out-expo);
+    pointer-events: none;
+  }
+  .card:hover::after { transform: translateX(100%); }
 
   .card::before {
     content: '';
@@ -408,7 +702,7 @@
     inset: 0;
     border-radius: inherit;
     padding: 1px;
-    background: linear-gradient(135deg, transparent, transparent, rgba(255,46,46,0.5));
+    background: linear-gradient(135deg, transparent, transparent, rgba(255,46,46,0.6));
     -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
@@ -435,6 +729,7 @@
     font-weight: 800;
     letter-spacing: 1px;
     text-transform: uppercase;
+    z-index: 1;
   }
   .card .badge.hot {
     background: rgba(255,46,46,0.12);
@@ -450,11 +745,15 @@
     letter-spacing: -0.2px;
     padding-right: 40px;
     line-height: 1.3;
+    position: relative;
+    z-index: 1;
   }
   .card .note {
     font-size: .78rem;
     color: var(--muted);
     line-height: 1.45;
+    position: relative;
+    z-index: 1;
   }
   .card .price {
     margin-top: auto;
@@ -465,6 +764,8 @@
     color: var(--accent);
     letter-spacing: -1px;
     line-height: 1;
+    position: relative;
+    z-index: 1;
   }
   .card .price span {
     font-family: var(--font-body);
@@ -475,13 +776,24 @@
     letter-spacing: 0;
   }
 
-  /* ===== LIST CARD ===== */
+  /* ============================================================
+     LIST-CARD
+     ============================================================ */
   .list-card {
     background: linear-gradient(160deg, var(--surface-2), var(--surface));
     border: 1px solid var(--border);
     border-radius: var(--radius);
     overflow: hidden;
     margin-bottom: 16px;
+    opacity: 0;
+    transform: translateY(15px);
+    transition: opacity .6s var(--ease-out-expo),
+                transform .6s var(--ease-out-expo);
+  }
+  .list-card.in {
+    opacity: 1;
+    transform: translateY(0);
+    transition-delay: calc(var(--i, 0) * 40ms);
   }
   .list-card-head {
     padding: 20px 24px 14px;
@@ -512,12 +824,10 @@
     padding: 12px 0;
     border-bottom: 1px solid var(--border);
     font-size: .92rem;
-    transition: padding .25s ease, background .25s;
+    transition: padding .3s var(--ease-out-expo);
   }
   .list-row:last-child { border-bottom: none; }
-  .list-row:hover {
-    padding-left: 8px;
-  }
+  .list-row:hover { padding-left: 8px; }
   .list-row .label { color: var(--text-soft); line-height: 1.4; }
   .list-row .val {
     font-family: var(--font-display);
@@ -548,7 +858,7 @@
     font-size: .82rem;
     letter-spacing: 1.2px;
     text-transform: uppercase;
-    transition: all .25s;
+    transition: all .3s var(--ease-out-expo);
     box-shadow: 0 4px 20px rgba(255,46,46,0.3);
   }
   .dc-btn:hover {
@@ -558,18 +868,29 @@
   }
   .dc-btn svg { width: 16px; height: 16px; }
 
-  /* ===== EMPTY STATE ===== */
+  /* ============================================================
+     EMPTY STATE
+     ============================================================ */
   .empty-state {
     text-align: center;
     padding: 80px 20px;
     color: var(--muted);
     display: none;
   }
-  .empty-state.show { display: block; }
+  .empty-state.show {
+    display: block;
+    animation: emptyIn .5s var(--ease-out-expo);
+  }
+  @keyframes emptyIn {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
   .empty-state .icon { font-size: 3rem; margin-bottom: 14px; opacity: .5; }
   .empty-state h3 { font-family: var(--font-display); color: var(--text-soft); margin-bottom: 6px; }
 
-  /* ===== BACK TO TOP ===== */
+  /* ============================================================
+     BACK TO TOP
+     ============================================================ */
   .back-top {
     position: fixed;
     bottom: 28px;
@@ -584,21 +905,27 @@
     place-items: center;
     cursor: pointer;
     opacity: 0;
-    transform: translateY(10px);
+    transform: translateY(10px) scale(.9);
     pointer-events: none;
-    transition: all .3s;
+    transition: all .4s var(--ease-out-expo);
     z-index: 60;
     backdrop-filter: blur(10px);
   }
-  .back-top.show { opacity: 1; transform: translateY(0); pointer-events: auto; }
+  .back-top.show {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    pointer-events: auto;
+  }
   .back-top:hover {
     background: var(--accent);
     border-color: var(--accent);
     box-shadow: 0 0 25px var(--accent-glow);
-    transform: translateY(-3px);
+    transform: translateY(-3px) scale(1);
   }
 
-  /* ===== FOOTER ===== */
+  /* ============================================================
+     FOOTER
+     ============================================================ */
   footer {
     margin-top: 80px;
     padding: 40px 24px;
@@ -622,14 +949,29 @@
   }
   footer strong { color: var(--accent); font-weight: 700; }
 
-  /* ===== RESPONSIVE ===== */
+  /* ============================================================
+     VIEW TRANSITIONS
+     ============================================================ */
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: .45s;
+    animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  ::view-transition-group(*) {
+    animation-duration: .5s;
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  /* ============================================================
+     RESPONSIVE
+     ============================================================ */
   @media (max-width: 720px) {
-    .topbar-inner { padding: 12px 16px; gap: 12px; }
+    .topbar-inner { padding: 12px 16px; gap: 10px; }
     .logo { font-size: .85rem; letter-spacing: 2px; }
     .logo-text { display: none; }
     .search-wrap { max-width: none; }
+    .refresh-btn { width: 36px; height: 36px; }
     .top-cta { padding: 9px 14px; font-size: .72rem; }
-    .top-cta .cta-text { display: none; }
     .hero { padding: 45px 16px 30px; }
     .container { padding: 0 16px 30px; }
     .filters { top: 58px; gap: 8px; margin-bottom: 40px; }
@@ -648,20 +990,53 @@
     .dc-btn { margin: 4px 18px 18px; }
     .back-top { bottom: 20px; right: 16px; width: 42px; height: 42px; }
     footer .row { justify-content: center; text-align: center; }
+
+    .preloader-meter { gap: 12px; }
+    .preloader-bar { height: 6px; }
+    .preloader-label { letter-spacing: 3px; font-size: .62rem; }
   }
 
   @media (prefers-reduced-motion: reduce) {
-    * { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+    *, *::before, *::after {
+      animation-duration: .01ms !important;
+      transition-duration: .01ms !important;
+    }
+    .section, .card, .list-card { opacity: 1; transform: none; }
+    .preloader { display: none !important; }
+    .topbar { transform: none; }
+    .word > span { transform: none; }
+    .hero-tag, .hero-sub { opacity: 1; transform: none; }
   }
 </style>
 </head>
-<body>
+<body class="loading">
+
+<!-- ===== PRELOADER ===== -->
+<div class="preloader" id="preloader">
+  <div class="preloader-panel top"></div>
+  <div class="preloader-panel bottom"></div>
+  <div class="preloader-inner">
+    <div class="preloader-brand">
+      <span class="preloader-brand-text">Fabric Shop</span>
+    </div>
+    <div class="preloader-meter">
+      <div class="preloader-percent">
+        <strong id="preloaderNum">0</strong><span class="pct-sign">%</span>
+      </div>
+      <div class="preloader-bar">
+        <div class="preloader-bar-fill" id="preloaderFill"></div>
+        <div class="preloader-bar-shine"></div>
+      </div>
+      <div class="preloader-label">Ładowanie cennika</div>
+    </div>
+  </div>
+</div>
 
 <div class="bg-orb bg-orb-1"></div>
 <div class="bg-orb bg-orb-2"></div>
 <div class="scroll-progress" id="scrollProgress"></div>
 
-<!-- ===== STICKY HEADER ===== -->
+<!-- ===== HEADER ===== -->
 <header class="topbar">
   <div class="topbar-inner">
     <div class="logo">
@@ -672,22 +1047,30 @@
       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.5-4.5"/></svg>
       <input type="text" id="searchInput" placeholder="Szukaj oferty… (np. netflix, steam, robux)">
     </div>
-    <a class="top-cta" href="https://discord.gg/Dszy6aMqvP" target="_blank" rel="noopener">
-      <span>Discord</span>
-    </a>
+    <button class="refresh-btn" id="refreshBtn" aria-label="Odśwież" title="Odśwież">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M21 12a9 9 0 1 1-2.64-6.36"/>
+        <polyline points="21 3 21 9 15 9"/>
+      </svg>
+    </button>
+    <a class="top-cta" href="https://discord.gg/Dszy6aMqvP" target="_blank" rel="noopener">Discord</a>
   </div>
 </header>
 
 <!-- ===== HERO ===== -->
 <section class="hero">
   <div class="hero-tag">Cennik</div>
-  <h1>Wszystko, czego<br><span class="gradient">potrzebujesz.</span></h1>
+  <h1>
+    <span class="word"><span style="--i:0">Wszystko,</span></span>
+    <span class="word"><span style="--i:1">czego</span></span><br>
+    <span class="word"><span class="gradient" style="--i:2">potrzebujesz.</span></span>
+  </h1>
   <p class="hero-sub">Wirtualne usługi, gry, streaming i boosty — w jednym miejscu. Przejrzyste ceny, szybka realizacja.</p>
 </section>
 
 <div class="container">
 
-  <!-- ===== FILTERS ===== -->
+  <!-- ===== FILTRY ===== -->
   <nav class="filters" id="filters">
     <button class="filter-btn active" data-cat="all">Wszystko <span class="cnt" id="cnt-all">0</span></button>
     <button class="filter-btn" data-cat="streaming">Streaming <span class="cnt" id="cnt-streaming">0</span></button>
@@ -706,103 +1089,22 @@
     </div>
     <div class="grid">
 
-      <div class="card" data-search="netflix 3 lata">
-        <div class="name">Netflix</div>
-        <div class="note">ok. 3 lata</div>
-        <div class="price">24 <span>zł</span></div>
-      </div>
-
-      <div class="card" data-search="netflix rok 1 rok">
-        <div class="name">Netflix</div>
-        <div class="note">1 rok</div>
-        <div class="price">17 <span>zł</span></div>
-      </div>
-
-      <div class="card" data-search="netflix 3 miesiace">
-        <div class="name">Netflix</div>
-        <div class="note">3 miesiące</div>
-        <div class="price">14 <span>zł</span></div>
-      </div>
-
-      <div class="card" data-search="netflix miesiac 1 miesiac">
-        <div class="name">Netflix</div>
-        <div class="note">1 miesiąc</div>
-        <div class="price">10 <span>zł</span></div>
-      </div>
-
-      <div class="card" data-search="disney plus 3 lata">
-        <div class="name">Disney+</div>
-        <div class="note">ok. 3 lata</div>
-        <div class="price">24 <span>zł</span></div>
-      </div>
-
-      <div class="card" data-search="disney plus 6 miesiecy">
-        <div class="name">Disney+</div>
-        <div class="note">6 miesięcy</div>
-        <div class="price">16 <span>zł</span></div>
-      </div>
-
-      <div class="card" data-search="disney plus 3 miesiace">
-        <div class="name">Disney+</div>
-        <div class="note">3 miesiące</div>
-        <div class="price">12 <span>zł</span></div>
-      </div>
-
-      <div class="card" data-search="youtube premium klucz miesiac">
-        <div class="badge hot">Klucz</div>
-        <div class="name">YouTube Premium</div>
-        <div class="note">Klucz • na Twoje konto • 1 miesiąc</div>
-        <div class="price">17 <span>zł</span></div>
-      </div>
-
-      <div class="card" data-search="youtube premium rok nowe konto">
-        <div class="name">YouTube Premium</div>
-        <div class="note">1 rok • nowe konto</div>
-        <div class="price">34 <span>zł</span></div>
-      </div>
-
-      <div class="card" data-search="youtube premium miesiac nowe konto">
-        <div class="name">YouTube Premium</div>
-        <div class="note">1 miesiąc • nowe konto</div>
-        <div class="price">14 <span>zł</span></div>
-      </div>
-
-      <div class="card" data-search="gemini pro ai google 5tb storage">
-        <div class="name">Gemini Pro AI + Google 5TB</div>
-        <div class="note">Storage w zestawie</div>
-        <div class="price">26 <span>zł</span></div>
-      </div>
-
-      <div class="card" data-search="capcut pro miesiac">
-        <div class="name">CapCut Pro</div>
-        <div class="note">1 miesiąc</div>
-        <div class="price">12 <span>zł</span></div>
-      </div>
-
-      <div class="card" data-search="capcut pro na zawsze">
-        <div class="badge">Best</div>
-        <div class="name">CapCut Pro</div>
-        <div class="note">na zawsze</div>
-        <div class="price">30 <span>zł</span></div>
-      </div>
-
-      <div class="card" data-search="chatgpt plus miesiac">
-        <div class="name">ChatGPT Plus</div>
-        <div class="note">1 miesiąc</div>
-        <div class="price">28 <span>zł</span></div>
-      </div>
-
-      <div class="card" data-search="chatgpt plus 6 miesiecy">
-        <div class="name">ChatGPT Plus</div>
-        <div class="note">6 miesięcy</div>
-        <div class="price">45 <span>zł</span></div>
-      </div>
-
-      <div class="card" data-search="chatgpt plus rok">
-        <div class="name">ChatGPT Plus</div>
-        <div class="note">1 rok</div>
-        <div class="price">55 <span>zł</span></div>
-      </div>
+      <div class="card" data-search="netflix 3 lata"><div class="name">Netflix</div><div class="note">ok. 3 lata</div><div class="price">24 <span>zł</span></div></div>
+      <div class="card" data-search="netflix rok 1 rok"><div class="name">Netflix</div><div class="note">1 rok</div><div class="price">17 <span>zł</span></div></div>
+      <div class="card" data-search="netflix 3 miesiace"><div class="name">Netflix</div><div class="note">3 miesiące</div><div class="price">14 <span>zł</span></div></div>
+      <div class="card" data-search="netflix miesiac 1 miesiac"><div class="name">Netflix</div><div class="note">1 miesiąc</div><div class="price">10 <span>zł</span></div></div>
+      <div class="card" data-search="disney plus 3 lata"><div class="name">Disney+</div><div class="note">ok. 3 lata</div><div class="price">24 <span>zł</span></div></div>
+      <div class="card" data-search="disney plus 6 miesiecy"><div class="name">Disney+</div><div class="note">6 miesięcy</div><div class="price">16 <span>zł</span></div></div>
+      <div class="card" data-search="disney plus 3 miesiace"><div class="name">Disney+</div><div class="note">3 miesiące</div><div class="price">12 <span>zł</span></div></div>
+      <div class="card" data-search="youtube premium klucz miesiac"><div class="badge hot">Klucz</div><div class="name">YouTube Premium</div><div class="note">Klucz • na Twoje konto • 1 miesiąc</div><div class="price">17 <span>zł</span></div></div>
+      <div class="card" data-search="youtube premium rok nowe konto"><div class="name">YouTube Premium</div><div class="note">1 rok • nowe konto</div><div class="price">34 <span>zł</span></div></div>
+      <div class="card" data-search="youtube premium miesiac nowe konto"><div class="name">YouTube Premium</div><div class="note">1 miesiąc • nowe konto</div><div class="price">14 <span>zł</span></div></div>
+      <div class="card" data-search="gemini pro ai google 5tb storage"><div class="name">Gemini Pro AI + Google 5TB</div><div class="note">Storage w zestawie</div><div class="price">26 <span>zł</span></div></div>
+      <div class="card" data-search="capcut pro miesiac"><div class="name">CapCut Pro</div><div class="note">1 miesiąc</div><div class="price">12 <span>zł</span></div></div>
+      <div class="card" data-search="capcut pro na zawsze"><div class="badge">Best</div><div class="name">CapCut Pro</div><div class="note">na zawsze</div><div class="price">30 <span>zł</span></div></div>
+      <div class="card" data-search="chatgpt plus miesiac"><div class="name">ChatGPT Plus</div><div class="note">1 miesiąc</div><div class="price">28 <span>zł</span></div></div>
+      <div class="card" data-search="chatgpt plus 6 miesiecy"><div class="name">ChatGPT Plus</div><div class="note">6 miesięcy</div><div class="price">45 <span>zł</span></div></div>
+      <div class="card" data-search="chatgpt plus rok"><div class="name">ChatGPT Plus</div><div class="note">1 rok</div><div class="price">55 <span>zł</span></div></div>
 
     </div>
   </section>
@@ -815,30 +1117,10 @@
     </div>
     <div class="grid">
 
-      <div class="card" data-search="minecraft konto">
-        <div class="name">Konto Minecraft</div>
-        <div class="note">Pełny dostęp</div>
-        <div class="price">45 <span>zł</span></div>
-      </div>
-
-      <div class="card" data-search="gta v konto">
-        <div class="name">Konto GTA V</div>
-        <div class="note">Pełny dostęp</div>
-        <div class="price">35 <span>zł</span></div>
-      </div>
-
-      <div class="card" data-search="gra steam kazda gra">
-        <div class="badge hot">-40%</div>
-        <div class="name">Każda gra Steam</div>
-        <div class="note">Płacisz 60% ceny gry na Steamie</div>
-        <div class="price">60 <span>% ceny</span></div>
-      </div>
-
-      <div class="card" data-search="robuxy robux 1000">
-        <div class="name">Robuxy</div>
-        <div class="note">1000 robuxów</div>
-        <div class="price">45 <span>zł</span></div>
-      </div>
+      <div class="card" data-search="minecraft konto"><div class="name">Konto Minecraft</div><div class="note">Pełny dostęp</div><div class="price">45 <span>zł</span></div></div>
+      <div class="card" data-search="gta v konto"><div class="name">Konto GTA V</div><div class="note">Pełny dostęp</div><div class="price">35 <span>zł</span></div></div>
+      <div class="card" data-search="gra steam kazda gra"><div class="badge hot">-40%</div><div class="name">Każda gra Steam</div><div class="note">Płacisz 60% ceny gry na Steamie</div><div class="price">60 <span>% ceny</span></div></div>
+      <div class="card" data-search="robuxy robux 1000"><div class="name">Robuxy</div><div class="note">1000 robuxów</div><div class="price">45 <span>zł</span></div></div>
 
     </div>
 
@@ -892,7 +1174,7 @@
     </div>
   </section>
 
-  <!-- ============ INNE USŁUGI ============ -->
+  <!-- ============ INNE ============ -->
   <section class="section" data-cat="inne">
     <div class="section-head">
       <h2 class="section-title">Inne usługi</h2>
@@ -900,23 +1182,9 @@
     </div>
     <div class="grid">
 
-      <div class="card" data-search="bot discord">
-        <div class="name">Bot Discord</div>
-        <div class="note">Wycena na ticket</div>
-        <div class="price" style="font-size:1.1rem;color:var(--text-soft)">Wycena</div>
-      </div>
-
-      <div class="card" data-search="strona www">
-        <div class="name">Strona WWW</div>
-        <div class="note">Wycena na ticket</div>
-        <div class="price" style="font-size:1.1rem;color:var(--text-soft)">Wycena</div>
-      </div>
-
-      <div class="card" data-search="serwer minecraft">
-        <div class="name">Serwer Minecraft</div>
-        <div class="note">Wycena na ticket</div>
-        <div class="price" style="font-size:1.1rem;color:var(--text-soft)">Wycena</div>
-      </div>
+      <div class="card" data-search="bot discord"><div class="name">Bot Discord</div><div class="note">Wycena na ticket</div><div class="price" style="font-size:1.1rem;color:var(--text-soft)">Wycena</div></div>
+      <div class="card" data-search="strona www"><div class="name">Strona WWW</div><div class="note">Wycena na ticket</div><div class="price" style="font-size:1.1rem;color:var(--text-soft)">Wycena</div></div>
+      <div class="card" data-search="serwer minecraft"><div class="name">Serwer Minecraft</div><div class="note">Wycena na ticket</div><div class="price" style="font-size:1.1rem;color:var(--text-soft)">Wycena</div></div>
 
     </div>
     <a class="dc-btn" style="margin:22px 0 0" href="https://discord.gg/Dszy6aMqvP" target="_blank" rel="noopener">
@@ -963,7 +1231,6 @@
     </div>
   </section>
 
-  <!-- ===== EMPTY STATE ===== -->
   <div class="empty-state" id="emptyState">
     <div class="icon">🔍</div>
     <h3>Brak wyników</h3>
@@ -972,12 +1239,10 @@
 
 </div>
 
-<!-- ===== BACK TO TOP ===== -->
 <button class="back-top" id="backTop" aria-label="Do góry">
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m6 15 6-6 6 6"/></svg>
 </button>
 
-<!-- ===== FOOTER ===== -->
 <footer>
   <div class="row">
     <div>Fabric Shop © <strong>2026</strong></div>
@@ -986,134 +1251,235 @@
 </footer>
 
 <script>
-  // ===== SCROLL PROGRESS =====
-  const progress = document.getElementById('scrollProgress');
-  const backTop = document.getElementById('backTop');
+/* ============================================================
+   PRELOADER — licznik procentowy + pasek
+   ============================================================ */
+(function() {
+  const preloader = document.getElementById('preloader');
+  const fill = document.getElementById('preloaderFill');
+  const num = document.getElementById('preloaderNum');
+  const body = document.body;
 
-  window.addEventListener('scroll', () => {
-    const h = document.documentElement;
-    const p = (h.scrollTop / (h.scrollHeight - h.clientHeight)) * 100;
-    progress.style.width = p + '%';
-    backTop.classList.toggle('show', h.scrollTop > 400);
-  }, { passive: true });
+  let pct = 0;
 
-  backTop.addEventListener('click', () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  });
+  const tick = () => {
+    const remaining = 100 - pct;
+    // im bliżej końca, tym mniejszy krok (naturalne wyhamowanie)
+    const step = Math.max(1, Math.min(remaining * 0.16 + Math.random() * 5, 10));
+    pct = Math.min(100, pct + step);
+    fill.style.width = pct + '%';
+    num.textContent = Math.floor(pct);
 
-  // ===== STAGGER CARD ANIMATIONS =====
+    if (pct < 100) {
+      setTimeout(tick, 45 + Math.random() * 45);
+    } else {
+      // chwila na pokazanie 100% przed rozjazdem kurtyny
+      setTimeout(finishPreloader, 260);
+    }
+  };
+
+  function finishPreloader() {
+    preloader.classList.add('done');
+    body.classList.remove('loading');
+    setTimeout(() => body.classList.add('ready'), 120);
+    setTimeout(() => {
+      revealAllCards();
+      startIntersection();
+    }, 600);
+    setTimeout(() => preloader.classList.add('gone'), 1300);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', () => setTimeout(tick, 150));
+  } else {
+    setTimeout(tick, 150);
+  }
+})();
+
+/* ============================================================
+   SCROLL PROGRESS + BACK TO TOP
+   ============================================================ */
+const progress = document.getElementById('scrollProgress');
+const backTop = document.getElementById('backTop');
+
+window.addEventListener('scroll', () => {
+  const h = document.documentElement;
+  const p = (h.scrollTop / (h.scrollHeight - h.clientHeight)) * 100;
+  progress.style.width = p + '%';
+  backTop.classList.toggle('show', h.scrollTop > 400);
+}, { passive: true });
+
+backTop.addEventListener('click', () => {
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
+
+/* ============================================================
+   KARTY — stagger
+   ============================================================ */
+function revealAllCards() {
   document.querySelectorAll('.grid').forEach(grid => {
     grid.querySelectorAll('.card').forEach((card, i) => {
-      card.style.animationDelay = (i * 0.04) + 's';
+      card.style.setProperty('--i', i);
+      card.classList.add('in');
     });
   });
-
-  // ===== COUNTERS =====
-  function countItems(cat) {
-    const sec = document.querySelector(`.section[data-cat="${cat}"]`);
-    if (!sec) return 0;
-    const cards = sec.querySelectorAll('.card').length;
-    const rows = sec.querySelectorAll('.list-row').length;
-    const singleListCards = sec.querySelectorAll('.list-card:not(:has(.list-row))').length;
-    return cards + rows + singleListCards;
-  }
-
-  const cats = ['streaming','gry','social','fake','inne','metody'];
-  let total = 0;
-  cats.forEach(c => {
-    const n = countItems(c);
-    document.getElementById('cnt-' + c).textContent = n;
-    total += n;
+  document.querySelectorAll('.list-card').forEach((lc, i) => {
+    lc.style.setProperty('--i', i);
+    lc.classList.add('in');
   });
-  document.getElementById('cnt-all').textContent = total;
+}
 
-  // ===== FILTER + SEARCH =====
-  let activeCat = 'all';
-  const searchInput = document.getElementById('searchInput');
-  const emptyState = document.getElementById('emptyState');
-  const filterBtns = document.querySelectorAll('.filter-btn');
-
-  function applyFilters() {
-    const q = searchInput.value.toLowerCase().trim();
-    let anyVisible = false;
-
-    document.querySelectorAll('.section').forEach(section => {
-      const cat = section.dataset.cat;
-      const catMatch = activeCat === 'all' || cat === activeCat;
-
-      if (!catMatch) {
-        section.classList.add('hidden');
-        return;
-      }
-
-      let visibleCount = 0;
-
-      // Cards
-      section.querySelectorAll('.card').forEach(card => {
-        const txt = (card.dataset.search || card.textContent).toLowerCase();
-        const match = !q || txt.includes(q);
-        card.classList.toggle('hidden', !match);
-        card.style.display = match ? '' : 'none';
-        if (match) visibleCount++;
-      });
-
-      // List cards
-      section.querySelectorAll('.list-card').forEach(lc => {
-        const rows = lc.querySelectorAll('.list-row');
-        if (rows.length > 0) {
-          let rowMatches = 0;
-          rows.forEach(row => {
-            const txt = (row.dataset.search || row.textContent).toLowerCase();
-            const match = !q || txt.includes(q);
-            row.style.display = match ? '' : 'none';
-            if (match) rowMatches++;
-          });
-          lc.style.display = rowMatches > 0 ? '' : 'none';
-          if (rowMatches > 0) visibleCount += rowMatches;
-        } else {
-          const txt = (lc.dataset.search || lc.textContent).toLowerCase();
-          const match = !q || txt.includes(q);
-          lc.style.display = match ? '' : 'none';
-          if (match) visibleCount++;
-        }
-      });
-
-      if (visibleCount === 0) {
-        section.classList.add('hidden');
-      } else {
-        section.classList.remove('hidden');
-        anyVisible = true;
-      }
-    });
-
-    emptyState.classList.toggle('show', !anyVisible);
-  }
-
-  filterBtns.forEach(btn => {
-    btn.addEventListener('click', () => {
-      filterBtns.forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      activeCat = btn.dataset.cat;
-      applyFilters();
-    });
-  });
-
-  let searchTimeout;
-  searchInput.addEventListener('input', () => {
-    clearTimeout(searchTimeout);
-    searchTimeout = setTimeout(applyFilters, 120);
-  });
-
-  // ===== REVEAL ON SCROLL (sections) =====
-  const io = new IntersectionObserver(entries => {
+/* ============================================================
+   SEKCJE — reveal on scroll
+   ============================================================ */
+let intersectionObserver;
+function startIntersection() {
+  if (intersectionObserver) return;
+  intersectionObserver = new IntersectionObserver(entries => {
     entries.forEach(e => {
-      if (e.isIntersecting) {
-        e.target.style.animation = 'fadeUp .6s ease';
+      if (e.isIntersecting) e.target.classList.add('revealed');
+    });
+  }, { threshold: 0.05, rootMargin: '0px 0px -40px 0px' });
+  document.querySelectorAll('.section').forEach(s => intersectionObserver.observe(s));
+}
+
+/* ============================================================
+   LICZNIKI
+   ============================================================ */
+function countItems(cat) {
+  const sec = document.querySelector(`.section[data-cat="${cat}"]`);
+  if (!sec) return 0;
+  return sec.querySelectorAll('.card').length
+       + sec.querySelectorAll('.list-row').length
+       + sec.querySelectorAll('.list-card:not(:has(.list-row))').length;
+}
+const cats = ['streaming','gry','social','fake','inne','metody'];
+let total = 0;
+cats.forEach(c => {
+  const n = countItems(c);
+  document.getElementById('cnt-' + c).textContent = n;
+  total += n;
+});
+document.getElementById('cnt-all').textContent = total;
+
+/* ============================================================
+   FILTRY + WYSZUKIWANIE
+   ============================================================ */
+let activeCat = 'all';
+const searchInput = document.getElementById('searchInput');
+const emptyState = document.getElementById('emptyState');
+const filterBtns = document.querySelectorAll('.filter-btn');
+
+function applyFilters() {
+  const q = searchInput.value.toLowerCase().trim();
+  let anyVisible = false;
+
+  document.querySelectorAll('.section').forEach(section => {
+    const catMatch = activeCat === 'all' || section.dataset.cat === activeCat;
+    if (!catMatch) { section.classList.add('hidden'); return; }
+
+    let visibleCount = 0;
+
+    section.querySelectorAll('.card').forEach(card => {
+      const txt = (card.dataset.search || card.textContent).toLowerCase();
+      const match = !q || txt.includes(q);
+      card.style.display = match ? '' : 'none';
+      if (match) visibleCount++;
+    });
+
+    section.querySelectorAll('.list-card').forEach(lc => {
+      const rows = lc.querySelectorAll('.list-row');
+      if (rows.length > 0) {
+        let rowMatches = 0;
+        rows.forEach(row => {
+          const txt = (row.dataset.search || row.textContent).toLowerCase();
+          const match = !q || txt.includes(q);
+          row.style.display = match ? '' : 'none';
+          if (match) rowMatches++;
+        });
+        lc.style.display = rowMatches > 0 ? '' : 'none';
+        if (rowMatches > 0) visibleCount += rowMatches;
+      } else {
+        const txt = (lc.dataset.search || lc.textContent).toLowerCase();
+        const match = !q || txt.includes(q);
+        lc.style.display = match ? '' : 'none';
+        if (match) visibleCount++;
       }
     });
-  }, { threshold: 0.05 });
 
-  document.querySelectorAll('.section').forEach(s => io.observe(s));
+    if (visibleCount === 0) {
+      section.classList.add('hidden');
+    } else {
+      section.classList.remove('hidden');
+      section.classList.add('revealed');
+      anyVisible = true;
+    }
+  });
+
+  emptyState.classList.toggle('show', !anyVisible);
+}
+
+function updateFilters() {
+  if (document.startViewTransition) {
+    document.startViewTransition(applyFilters);
+  } else {
+    applyFilters();
+  }
+}
+
+filterBtns.forEach(btn => {
+  btn.addEventListener('click', () => {
+    filterBtns.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    activeCat = btn.dataset.cat;
+    updateFilters();
+  });
+});
+
+let searchTimeout;
+searchInput.addEventListener('input', () => {
+  clearTimeout(searchTimeout);
+  searchTimeout = setTimeout(updateFilters, 140);
+});
+
+/* ============================================================
+   PRZYCISK ODŚWIEŻANIA
+   ============================================================ */
+const refreshBtn = document.getElementById('refreshBtn');
+refreshBtn.addEventListener('click', () => {
+  refreshBtn.classList.remove('spinning');
+  void refreshBtn.offsetWidth;
+  refreshBtn.classList.add('spinning');
+  setTimeout(() => refreshBtn.classList.remove('spinning'), 950);
+
+  searchInput.value = '';
+  activeCat = 'all';
+  filterBtns.forEach(b => b.classList.toggle('active', b.dataset.cat === 'all'));
+
+  const doReset = () => {
+    document.querySelectorAll('.section').forEach(s => {
+      s.classList.remove('hidden');
+      s.classList.add('revealed');
+    });
+    emptyState.classList.remove('show');
+
+    document.querySelectorAll('.card, .list-card').forEach(el => {
+      el.classList.remove('in');
+      el.style.display = '';
+    });
+
+    void document.body.offsetWidth;
+    requestAnimationFrame(revealAllCards);
+  };
+
+  if (document.startViewTransition) {
+    document.startViewTransition(doReset);
+  } else {
+    doReset();
+  }
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+});
 </script>
 
 </body>
