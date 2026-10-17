@@ -118,7 +118,6 @@
     to { transform: translateY(0); }
   }
 
-  /* --- METER: licznik + pasek + etykieta --- */
   .preloader-meter {
     width: min(340px, 74vw);
     display: flex;
@@ -127,7 +126,6 @@
     gap: 16px;
   }
 
-  /* Duży licznik procentowy NAD paskiem */
   .preloader-percent {
     display: flex;
     align-items: baseline;
@@ -155,7 +153,6 @@
     margin-left: 2px;
   }
 
-  /* Gruby pasek (8px) z animowanym gradientem, glow i shine */
   .preloader-bar {
     position: relative;
     width: 100%;
@@ -192,7 +189,6 @@
     100% { background-position: 200% 0; }
   }
 
-  /* Przelatujący błysk na pasku (shine) */
   .preloader-bar-shine {
     position: absolute;
     inset: 0;
@@ -222,7 +218,6 @@
     100% { left: 130%; }
   }
 
-  /* Etykieta pod paskiem z animowanymi kropkami */
   .preloader-label {
     font-size: .68rem;
     letter-spacing: 5px;
@@ -244,7 +239,6 @@
     75% { content: '...'; }
   }
 
-  /* Stan "done" — kurtyna się rozjeżdża */
   .preloader.done .preloader-inner {
     opacity: 0;
     transform: translateY(-16px);
@@ -1178,9 +1172,16 @@
   <section class="section" data-cat="inne">
     <div class="section-head">
       <h2 class="section-title">Inne usługi</h2>
-      <span class="section-count">Na ticket</span>
+      <span class="section-count">4 pozycje</span>
     </div>
     <div class="grid">
+
+      <div class="card" data-search="fake mobywatel mObywatel aplikacja">
+        <div class="badge hot">Best</div>
+        <div class="name">Fake mObywatel</div>
+        <div class="note">Najlepszy na rynku</div>
+        <div class="price">15 <span>zł</span></div>
+      </div>
 
       <div class="card" data-search="bot discord"><div class="name">Bot Discord</div><div class="note">Wycena na ticket</div><div class="price" style="font-size:1.1rem;color:var(--text-soft)">Wycena</div></div>
       <div class="card" data-search="strona www"><div class="name">Strona WWW</div><div class="note">Wycena na ticket</div><div class="price" style="font-size:1.1rem;color:var(--text-soft)">Wycena</div></div>
@@ -1264,7 +1265,6 @@
 
   const tick = () => {
     const remaining = 100 - pct;
-    // im bliżej końca, tym mniejszy krok (naturalne wyhamowanie)
     const step = Math.max(1, Math.min(remaining * 0.16 + Math.random() * 5, 10));
     pct = Math.min(100, pct + step);
     fill.style.width = pct + '%';
@@ -1273,7 +1273,6 @@
     if (pct < 100) {
       setTimeout(tick, 45 + Math.random() * 45);
     } else {
-      // chwila na pokazanie 100% przed rozjazdem kurtyny
       setTimeout(finishPreloader, 260);
     }
   };
